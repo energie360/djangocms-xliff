@@ -1,0 +1,35 @@
+{% extends "djangocms_xliff/base.html" %}
+
+{% load i18n l10n %}
+
+{% block content %}
+    <p style="color: #693 !important; font-weight: bold; margin-bottom: 30px;">{{ description }}</p>
+
+    <div class="change-list">
+        {% for plugin_id, units in xliff.grouped_units %}
+            <p><strong>{{ units.0.plugin_name }}</strong> (ID: {{ plugin_id|unlocalize }}, Type: {{ units.0.plugin_type }})</p>
+            <div class="results">
+                <table id="result_list" style="margin-bottom: 30px !important;">
+                    <tbody>
+                        {% for unit in units %}
+                            <tr>
+                                <th style="width: 120px; font-weight: bold; color: #666;">{{ unit.field_verbose_name }}</th>
+                                <td style="white-space: normal">{{ unit.target }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
+    </div>
+
+    <p>{{ note }}</p>
+
+    <form action="{{ action_url }}" method="post" class="modal-body">
+        {% csrf_token %}
+        <input type="hidden" name="xliff_json" value="{{ xliff_json }}">
+        <div class="submit-row">
+            <button class="cms-btn cms-btn-action default" type="submit">{% translate "Import" %}</button>
+        </div>
+    </form>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "djangocms_xliff/base.html" %}
+
+{% load i18n l10n %}
+
+{% block content %}
+    <h3 style="color: green !important; font-weight: bold; margin-bottom: 24px;">{% translate "Import success" %}</h3>
+    <p>{% translate "Plugins updated" %}:</p>
+
+    <ul>
+        {% for plugin, fields in updated_plugins.items %}
+            <li>{{ plugin.0 }}: {{ plugin.1|unlocalize }}
+                <ul>
+                    {% for field_name, target in fields %}
+                        <li>{{ field_name }} -> {{ target }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+
+    {# This is quite the hack, so we can update the page. It triggers the admin cms_page/change api with the same page data #}
+    <form action="{{ action_url }}" method="post" class="modal-body">
+        {% csrf_token %}
+        <div style="display: none">
+            {{ form.as_p }}
+        </div>
+
+        <div class="submit-row">
+            <button class="cms-btn cms-btn-action default" type="submit">{% translate "Reload page" %}</button>
+        </div>
+    </form>
+{% endblock %}

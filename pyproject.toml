@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "djangocms-xliff"
+version = "0.1.0"
+description = "XLIFF Import and Export for the Django CMS"
+authors = ["Energie 360 <onlineservice@energie360.ch>"]
+maintainers = ["Energie 360 <onlineservice@energie360.ch>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://energie360.ch"
+repository = "https://github.com/energie360/djangocms-xliff"
+keywords = ["django", "django-cms", "xliff", "import", "export"]
+classifiers = [
+    "Environment :: Web Environment",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Software Development :: Libraries",
+    "Framework :: Django",
+    "Framework :: Django CMS",
+]
+packages = [
+    { include = "djangocms_xliff" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Django = "^3.2"
+django-cms = "^3.9"
+requests = "^2.20"
+defusedxml = "^0.7"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.2.0"
+tox = "^3.27.0"
+pytest-django = "^4.5.2"
+pre-commit = "^2.20.0"
+bump2version = "^1.0.1"
+
+[tool.black]
+line-length = 120
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101", "B405"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,16 @@
+{% extends "djangocms_xliff/base.html" %}
+
+{% load i18n %}
+
+{% block content %}
+    <form enctype="multipart/form-data" action="" method="post">
+        {% csrf_token %}
+        <p><strong>{{ lead }}</strong></p>
+        {{ form.as_p }}
+        <p>{{ description }}</p>
+
+        <div class="submit-row">
+            <button class="cms-btn cms-btn-action default" type="submit">{{ button_label }}</button>
+        </div>
+    </form>
+{% endblock %}

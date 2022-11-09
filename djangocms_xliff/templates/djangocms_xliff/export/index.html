@@ -1,0 +1,20 @@
+{% extends "djangocms_xliff/base.html" %}
+
+{% load i18n %}
+
+{% block content %}
+    <p><strong>{{ lead }}</strong></p>
+    <p>{{ line1 }}</p>
+    <p><strong>{{ line2 }}</strong></p>
+    <p>{{ line3 }}</p>
+    <br>
+
+    <form id="djangocms-xliff-form" action="" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <div class="submit-row">
+            <button id="djangocms-xliff-button" type="submit" class="cms-btn cms-btn-action">{{ button_label }}</button>
+        </div>
+    </form>
+{% endblock %}

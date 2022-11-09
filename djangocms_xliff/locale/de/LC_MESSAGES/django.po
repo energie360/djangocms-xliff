@@ -1,0 +1,175 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <andre.da-silva@energie360>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-11-09 09:54+0100\n"
+"PO-Revision-Date: 2022-11-08 13:25+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.1.1\n"
+
+#: djangocms_xliff/apps.py:7
+msgid "Django CMS XLIFF Import / Export"
+msgstr "Django CMS XLIFF Import / Export"
+
+#: djangocms_xliff/cms_toolbars.py:49
+msgid "Export as XLIFF"
+msgstr "Exportieren als XLIFF"
+
+#: djangocms_xliff/cms_toolbars.py:53 djangocms_xliff/views.py:76
+msgid "Import from XLIFF"
+msgstr "Import aus XLIFF"
+
+#: djangocms_xliff/extractors.py:119
+msgid "No plugins found. You need to copy plugins from an existing page"
+msgstr ""
+"Keine Plugins gefunden. Sie müssen Plugins von einer bestehenden Seite "
+"kopieren"
+
+#: djangocms_xliff/forms.py:8
+msgid "Source language in XLIFF header:"
+msgstr "Ausgangssprache im XLIFF-Header:"
+
+#: djangocms_xliff/forms.py:10
+msgid ""
+"The source language is usually the main language of the project. It serves "
+"as an orientation for the translator in the XLIFF tool."
+msgstr ""
+"Die Ausgangsprache ist für gewöhnlich die Hauptsprache des Projekts. Sie "
+"dient dem Übersetzer als Orientierung im XLIFF-Tool."
+
+#: djangocms_xliff/forms.py:23
+msgid "File to import"
+msgstr "Zu importierende Datei"
+
+#: djangocms_xliff/imports.py:41
+#, python-format
+msgid ""
+"Selected page id: \"%(page_id)s\" is not the same as xliff page id: "
+"\"%(xliff_page_id)s\""
+msgstr ""
+"Die ausgewählte Seiten ID: \"%(page_id)s\" stimmt nicht mit der XLIFF Seiten "
+"ID: \"%(xliff_page_id)s\" überein"
+
+#: djangocms_xliff/imports.py:51
+#, python-format
+msgid ""
+"Current page language: \"%(page_language)s\" is not the same as xliff target "
+"language: \"%(xliff_target_language)s\""
+msgstr ""
+"Die aktuelle Seitensprache: \"%(page_language)s\" stimmt nicht mit der XLIFF "
+"Zielsprache: \"%(xliff_target_language)s\" überein"
+
+#: djangocms_xliff/imports.py:65
+#, python-format
+msgid ""
+"Text in \"%(field_name)s\" with content \"%(target)s\" has too many "
+"characters. Should be %(max_length)s, but is %(target_length)s"
+msgstr ""
+"Der text in \"%(field_name)s\" mit dem Inhalt \"%(target)s\" hat zu viele "
+"Zeichen. Sollte %(max_length)s sein, ist aber %(target_length)s"
+
+#: djangocms_xliff/parsers.py:85
+msgid "Invalid xml"
+msgstr "Ungültiges XML"
+
+#: djangocms_xliff/templates/djangocms_xliff/import/preview.html:32
+#: djangocms_xliff/views.py:126
+msgid "Import"
+msgstr "Importieren"
+
+#: djangocms_xliff/templates/djangocms_xliff/import/success.html:6
+msgid "Import success"
+msgstr "Erfolgreich importiert"
+
+#: djangocms_xliff/templates/djangocms_xliff/import/success.html:7
+msgid "Plugins updated"
+msgstr "Plugins aktualisiert"
+
+#: djangocms_xliff/templates/djangocms_xliff/import/success.html:29
+msgid "Reload page"
+msgstr "Seite neu laden"
+
+#: djangocms_xliff/types.py:41
+#, python-format
+msgid "Max characters: %(max_length)d"
+msgstr "Maximale Anzahl Zeichen: %(max_length)d"
+
+#: djangocms_xliff/views.py:74
+#, python-format
+msgid "Export the content of the currently selected language \"%(language)s\"."
+msgstr ""
+"Exportiert den Inhalt der aktuell ausgewählten Sprache \"%(language)s\"."
+
+#: djangocms_xliff/views.py:78
+#, python-format
+msgid ""
+"Translate this file in your preferred XLIFF tool and import later on with "
+"\"%(import_from)s\"."
+msgstr ""
+"Übersetzen Sie diese Datei in Ihrem bevorzugten XLIFF-Tool und importieren "
+"Sie sie später mit \"%(import_from)s\"."
+
+#: djangocms_xliff/views.py:83
+msgid "Export"
+msgstr "Exportieren"
+
+#: djangocms_xliff/views.py:87
+msgid "You can only import the exact file and language you've exported."
+msgstr ""
+"Sie können jeweils nur in dieselbe Seite und Sprache importieren, aus der "
+"Sie exportiert haben."
+
+#: djangocms_xliff/views.py:89
+msgid ""
+"First create the page to be translated in the new language, copy the plugins "
+"and only then create an export."
+msgstr ""
+"Legen Sie die zu übersetzende Seite zuerst in der neuen Sprache an, kopieren "
+"Sie die Plugins und erst dann erstellen Sie einen Export."
+
+#: djangocms_xliff/views.py:92
+msgid "Download"
+msgstr "Herunterladen"
+
+#: djangocms_xliff/views.py:127
+#, python-format
+msgid "Import the translation for the \"%(language)s\" page."
+msgstr "Importieren Sie die Übersetzung für die Seite \"%(language)s\"."
+
+#: djangocms_xliff/views.py:128
+msgid "You can only import to the same page and language you exported from."
+msgstr ""
+"Sie können nur in dieselbe Seite und Sprache importieren, aus der Sie "
+"exportiert haben."
+
+#: djangocms_xliff/views.py:130
+msgid "Preview"
+msgstr "Vorschau"
+
+#: djangocms_xliff/views.py:140
+#, python-format
+msgid ""
+"Found %(count_plugins)d plugins that will be imported to the "
+"\"%(language)s\" page."
+msgstr ""
+"Es wurden %(count_plugins)d gefunden, die auf der Seite \"%(language)s\" "
+"importiert werden."
+
+#: djangocms_xliff/views.py:144
+msgid ""
+"Please note that complex types, images, media and links are not part of the "
+"translation process and have to be translated manually."
+msgstr ""
+"Bitte beachten Sie, dass komplexe Typen, Bilder, Medien und Links nicht Teil "
+"des Übersetzungsprozesses sind und manuell übersetzt werden müssen."

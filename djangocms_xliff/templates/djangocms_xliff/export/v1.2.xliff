@@ -1,0 +1,14 @@
+{% load l10n %}{% localize off %}<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<xliff {% for name, url in xml_namespaces.items %}{{ name }}="{{ url }}"{% endfor %} version="{{ version }}">
+    <file original="{{ xliff.page_path }}" datatype="plaintext" source-language="{{ xliff.source_language }}" target-language="{{ xliff.target_language }}">
+        <tool tool-id="{{ xliff.page_id }}" tool-name="{{ tool.name }}" tool-company-name="{{ tool.company }}"/>
+        <body>{% for unit in xliff.units %}
+            <trans-unit id="{{ unit.id }}" resname="{{ unit.id }}"{% if unit.max_length %} maxwidth="{{ unit.max_length }}" size-unit="char"{% endif %} extype="{{ unit.field_type }}">
+                <source><![CDATA[{{ unit.source|safe }}]]></source>
+                <target><![CDATA[{{ unit.target|safe }}]]></target>{% for note in unit.notes %}
+                <note>{{ note }}</note>{% endfor %}
+            </trans-unit>{% endfor %}
+        </body>
+    </file>
+</xliff>
+{% endlocalize %}
