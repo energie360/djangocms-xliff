@@ -3,7 +3,7 @@ from pathlib import Path
 from django.core.management import BaseCommand, CommandError
 
 from djangocms_xliff.exceptions import XliffError
-from djangocms_xliff.imports import save_xliff_units
+from djangocms_xliff.imports import save_xliff_context
 from djangocms_xliff.parsers import parse_xliff_document
 
 
@@ -23,7 +23,7 @@ class Command(BaseCommand):
                     "Do you want to import the units? This will save them directly into the database. (y/n): "
                 )
                 if wants_to_continue == "y":
-                    save_xliff_units(xliff_context)
+                    save_xliff_context(xliff_context)
 
                     self.stdout.write(
                         self.style.SUCCESS(

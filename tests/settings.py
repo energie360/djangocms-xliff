@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "menus",
     "sekizai",
     "cms",
+    "tests",
     "djangocms_xliff",
 ]
 

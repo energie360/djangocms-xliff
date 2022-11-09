@@ -12,7 +12,7 @@ from djangocms_xliff.utils import get_lang_name, group_units_by_plugin_id
 logger = logging.getLogger(__name__)
 
 
-def save_xliff_units(xliff_context: XliffContext) -> None:
+def save_xliff_context(xliff_context: XliffContext) -> None:
     for plugin_id, units in group_units_by_plugin_id(xliff_context.units):
         try:
             cms_plugin = CMSPlugin.objects.get(pk=plugin_id)
@@ -27,7 +27,7 @@ def save_xliff_units(xliff_context: XliffContext) -> None:
             target = unit.target
 
             if unit.field_type in FIELD_IMPORTERS:
-                FIELD_IMPORTERS[unit.field_type](instance=instance, unit=unit)
+                instance = FIELD_IMPORTERS[unit.field_type](instance=instance, unit=unit)
             else:
                 setattr(instance, field_name, target)
 

@@ -54,7 +54,7 @@ def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
                 Unit(
                     plugin_id=instance.id,
                     plugin_type=instance.plugin_type,
-                    plugin_name=instance._meta.verbose_name,
+                    plugin_name=instance.get_plugin_name(),
                     field_name=field.name,
                     field_type=get_type_with_path(field),
                     field_verbose_name=field.verbose_name,
@@ -90,9 +90,7 @@ def extract_units_from_placeholder(placeholder: Placeholder, language: str) -> L
     return units
 
 
-def get_declared_page_placeholders(
-    page: Page,
-) -> Generator[Placeholder, None, None]:
+def get_declared_page_placeholders(page: Page) -> Generator[Placeholder, None, None]:
     declared_placeholders_slots = [pl.slot for pl in page.get_declared_placeholders()]
     logger.debug(f"Declared placeholders in page: {declared_placeholders_slots}")
 

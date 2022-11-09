@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 from cms.api import create_page
-from cms.constants import TEMPLATE_INHERITANCE_MAGIC
 
 from djangocms_xliff.exceptions import XliffError
 from djangocms_xliff.settings import XLIFF_NAMESPACES, XliffVersion
@@ -26,7 +25,7 @@ def test_multiple_xliff_xml_namespaces():
 
 @pytest.mark.django_db
 def test_get_draft_page_id_must_be_a_draft():
-    page = create_page("Test", TEMPLATE_INHERITANCE_MAGIC, "de", published=True)
+    page = create_page("Test", "testing.html", "de", published=True)
     public_page = page.get_public_object()
 
     with pytest.raises(XliffError):

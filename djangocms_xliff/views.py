@@ -17,7 +17,7 @@ from django.views import View
 from djangocms_xliff.exceptions import XliffError
 from djangocms_xliff.exports import export_page_as_xliff
 from djangocms_xliff.forms import ExportForm, UploadFileForm
-from djangocms_xliff.imports import save_xliff_units, validate_xliff
+from djangocms_xliff.imports import save_xliff_context, validate_xliff
 from djangocms_xliff.parsers import parse_xliff_document
 from djangocms_xliff.settings import (
     TEMPLATES_FOLDER,
@@ -195,7 +195,7 @@ class ImportView(XliffView):
             units = data.pop("units", [])
 
             xliff_context = XliffContext(**data, units=[Unit(**u) for u in units])
-            save_xliff_units(xliff_context)
+            save_xliff_context(xliff_context)
 
             return self.trigger_cms_change_page(request, page_id, current_language)
         except XliffError as e:
