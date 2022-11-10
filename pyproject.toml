@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "djangocms-xliff"
-version = "0.1.0"
+version = "1.0.0"
 description = "XLIFF Import and Export for the Django CMS"
 authors = ["Energie 360 <onlineservice@energie360.ch>"]
 maintainers = ["Energie 360 <onlineservice@energie360.ch>"]
