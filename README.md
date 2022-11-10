@@ -107,14 +107,6 @@ You will get a preview of the import that needs to be confirmed.
 
 The translations are now imported, and you can publish the page.
 
-### XLIFF Editors
-
-The XLIFF files that are generated with this plugin are known to work with the following editors:
-
-* ...
-
-(Please give us a note if you can confirm compatibility to other editors as well and we will list it here.)
-
 ## Settings
 
 By default, djangocms-xliff searches for the following django model fields: `CharField, TextField, URLField` in your
