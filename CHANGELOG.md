@@ -1,15 +1,15 @@
 # Change Log
 
-## [0.1.0] - 2022-07-
+## [1.0.0] - 2022-07-10
 
 ### Added
 
-* Project with setup
-  * Testing
-  * CI
-  * Linting
-  * Formatting
-  * etc.
+* Project setup:
+    * Testing
+    * CI
+    * Linting
+    * Formatting
+    * etc.
 * First usable version of the package
 
 ### Changed
