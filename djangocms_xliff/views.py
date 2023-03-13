@@ -2,10 +2,9 @@ import json
 from dataclasses import asdict
 from typing import Type
 
-import requests
-from cms.admin.forms import ChangePageForm
-from cms.utils.urlutils import admin_reverse
+from django.contrib.admin import site
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.contenttypes.models import ContentType
 from django.forms import Form
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -15,7 +14,7 @@ from django.utils.translation import gettext as _
 from django.views import View
 
 from djangocms_xliff.exceptions import XliffError
-from djangocms_xliff.exports import export_page_as_xliff
+from djangocms_xliff.exports import export_content_as_xliff
 from djangocms_xliff.forms import ExportForm, UploadFileForm
 from djangocms_xliff.imports import save_xliff_context, validate_xliff
 from djangocms_xliff.parsers import parse_xliff_document
@@ -25,7 +24,7 @@ from djangocms_xliff.settings import (
     TEMPLATES_FOLDER_IMPORT,
 )
 from djangocms_xliff.types import Unit, XliffContext
-from djangocms_xliff.utils import get_draft_page, get_lang_name
+from djangocms_xliff.utils import get_lang_name, get_obj
 
 
 class XliffView(View):
@@ -45,18 +44,20 @@ class ExportView(XliffView):
     template = f"{TEMPLATES_FOLDER_EXPORT}/index.html"
     form_class: Type[ExportForm] = ExportForm
 
-    def get(self, request, page_id: int, current_language: str, *args, **kwargs):
+    def get(self, request, current_language: str, *args, **kwargs):
         form = self.form_class(current_language)
         return self.render_template(form, current_language)
 
-    def post(self, request, page_id: int, current_language: str, *args, **kwargs):
+    def post(self, request, content_type_id: int, obj_id: int, current_language: str, *args, **kwargs):
         form = self.form_class(current_language, request.POST)
         if not form.is_valid():
             return self.render_template(form, current_language)
 
+        content_type = ContentType.objects.get_for_id(content_type_id)
+        obj = content_type.model_class().objects.get(id=obj_id)
         try:
-            xliff_str, file_name = export_page_as_xliff(
-                page_id=page_id,
+            xliff_str, file_name = export_content_as_xliff(
+                obj=obj,
                 source_language=form.cleaned_data["source_language"],
                 target_language=current_language,
             )
@@ -75,8 +76,8 @@ class ExportView(XliffView):
 
         line1_params = {"import_from": _("Import from XLIFF")}
         line1 = (
-            _('Translate this file in your preferred XLIFF tool and import later on with "%(import_from)s".')
-            % line1_params
+                _('Translate this file in your preferred XLIFF tool and import later on with "%(import_from)s".')
+                % line1_params
         )
 
         context = {
@@ -100,11 +101,11 @@ class UploadView(XliffView):
     template_success = f"{TEMPLATES_FOLDER_IMPORT}/preview.html"
     form_class: Type[UploadFileForm] = UploadFileForm
 
-    def get(self, request, page_id, current_language: str, *args, **kwargs):
+    def get(self, request, current_language: str, *args, **kwargs):
         form = self.form_class()
         return self.render_template(form, current_language)
 
-    def post(self, request, page_id, current_language, *args, **kwargs):
+    def post(self, request, content_type_id: int, obj_id: int, current_language: str, *args, **kwargs):
         form = self.form_class(request.POST, request.FILES)
         if not form.is_valid():
             return self.render_template(form, current_language)
@@ -113,8 +114,8 @@ class UploadView(XliffView):
             uploaded_file = form.cleaned_data["file"]
             xliff_context = parse_xliff_document(uploaded_file)
 
-            page = get_draft_page(page_id)
-            validate_xliff(page, xliff_context, current_language)
+            obj = get_obj(content_type_id, obj_id)
+            validate_xliff(obj, xliff_context, current_language)
 
             return self.render_template_success(uploaded_file.name, xliff_context)
         except XliffError as e:
@@ -137,7 +138,7 @@ class UploadView(XliffView):
             "count_plugins": len(xliff_context.units),
         }
         description = (
-            _('Found %(count_plugins)d plugins that will be imported to the "%(language)s" page.') % description_params
+                _('Found %(count_plugins)d plugins that will be imported to the "%(language)s" page.') % description_params
         )
 
         note = _(
@@ -151,7 +152,8 @@ class UploadView(XliffView):
             "action_url": reverse(
                 "djangocms_xliff:import",
                 kwargs={
-                    "page_id": xliff_context.page_id,
+                    "content_type_id": xliff_context.content_type_id,
+                    "obj_id": xliff_context.obj_id,
                     "current_language": xliff_context.target_language,
                 },
             ),
@@ -163,33 +165,7 @@ class UploadView(XliffView):
 
 @method_decorator(staff_member_required, name="dispatch")
 class ImportView(XliffView):
-    @staticmethod
-    def trigger_cms_change_page(request, page_id, current_language):
-        """
-        This is a trick to trigger the cms, that we changed a page
-        It calls the admin api, the same way, as the "Change Page" Toolbar option
-        It basically just saves the page with the existing data
-        """
-        page = get_draft_page(page_id)
-        title_obj = page.get_title_obj(current_language)
-
-        fields = {field: getattr(title_obj, field, "") for field in ChangePageForm.translation_fields}
-        cms_admin_change_page_url = f'{admin_reverse("cms_page_change", args=[page_id])}?language={current_language}'
-        data = {
-            "csrfmiddlewaretoken": request.POST["csrfmiddlewaretoken"],
-            "language": current_language,
-            **fields,
-        }
-        headers = {"Referer": request.build_absolute_uri(request.get_full_path())}
-        response = requests.post(
-            url=request.build_absolute_uri(cms_admin_change_page_url),
-            data=data,
-            cookies=request.COOKIES,
-            headers=headers,
-        )
-        return HttpResponse(content=response.content)
-
-    def post(self, request, page_id, current_language, *args, **kwargs):
+    def post(self, request, content_type_id: int, obj_id: int, *args, **kwargs):
         try:
             data = json.loads(request.POST["xliff_json"])
             units = data.pop("units", [])
@@ -197,6 +173,10 @@ class ImportView(XliffView):
             xliff_context = XliffContext(**data, units=[Unit(**u) for u in units])
             save_xliff_context(xliff_context)
 
-            return self.trigger_cms_change_page(request, page_id, current_language)
+            # Determine the HttpResponse for the change_view stage.
+            content_type = ContentType.objects.get_for_id(content_type_id)
+            admin = site._registry[content_type.model_class()]
+            obj = get_obj(content_type_id, obj_id)
+            return admin.response_change(request, obj)
         except XliffError as e:
             return self.error_response(e)

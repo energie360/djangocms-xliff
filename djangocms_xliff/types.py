@@ -1,14 +1,16 @@
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union, Type
 
 from cms.models import Page
+from django.db.models import Model
 from django.utils.translation import gettext as _
 
-UNIT_ID_DELIMITER = "__"
+ID_DELIMITER = "__"
 
 ExportContent = str
 ExportFileName = str
 ExportPage = Tuple[ExportContent, ExportFileName]
+XliffObj = Union[Page, Type[Model]]
 
 
 @dataclass
@@ -28,7 +30,7 @@ class Unit:
 
     @property
     def id(self):
-        return f"{self.plugin_id}{UNIT_ID_DELIMITER}{self.field_name}"
+        return f"{self.plugin_id}{ID_DELIMITER}{self.field_name}"
 
     @property
     def notes(self) -> List[Optional[str]]:
@@ -57,8 +59,9 @@ class Unit:
 class XliffContext:
     source_language: str
     target_language: str
-    page_id: int
-    page_path: str
+    content_type_id: int
+    obj_id: int
+    path: str
     units: List[Unit]
 
     @property
@@ -68,7 +71,5 @@ class XliffContext:
         return group_units_by_plugin_id(self.units)
 
     @property
-    def page(self) -> Page:
-        from djangocms_xliff.utils import get_draft_page
-
-        return get_draft_page(self.page_id)
+    def tool_id(self) -> str:
+        return f'{self.content_type_id}{ID_DELIMITER}{self.obj_id}'

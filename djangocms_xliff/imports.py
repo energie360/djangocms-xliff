@@ -1,12 +1,12 @@
 import logging
 from typing import List
 
-from cms.models import CMSPlugin, Page
+from cms.models import CMSPlugin
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffImportError
 from djangocms_xliff.settings import FIELD_IMPORTERS
-from djangocms_xliff.types import Unit, XliffContext
+from djangocms_xliff.types import Unit, XliffContext, XliffObj
 from djangocms_xliff.utils import get_lang_name, group_units_by_plugin_id
 
 logger = logging.getLogger(__name__)
@@ -34,14 +34,14 @@ def save_xliff_context(xliff_context: XliffContext) -> None:
         instance.save()
 
 
-def validate_page_with_xliff_context(page: Page, xliff_context: XliffContext, current_language: str):
-    page_id = page.id
-    xliff_page_id = xliff_context.page_id
-    if page_id != xliff_page_id:
-        error_message = _('Selected page id: "%(page_id)s" is not the same as xliff page id: "%(xliff_page_id)s"')
+def validate_page_with_xliff_context(obj: XliffObj, xliff_context: XliffContext, current_language: str):
+    obj_id = obj.id
+    xliff_obj_id = xliff_context.obj_id
+    if obj_id != xliff_obj_id:
+        error_message = _('Selected page id: "%(obj_id)s" is not the same as xliff page id: "%(xliff_obj_id)s"')
         error_params = {
-            "page_id": page_id,
-            "xliff_page_id": xliff_page_id,
+            "obj_id": obj_id,
+            "xliff_obj_id": xliff_obj_id
         }
         raise XliffImportError(error_message % error_params)
 
@@ -74,6 +74,6 @@ def validate_units_max_lengths(units: List[Unit]):
             raise XliffImportError(error_message % error_params)
 
 
-def validate_xliff(page: Page, xliff_context: XliffContext, current_language: str) -> None:
+def validate_xliff(obj: XliffObj, xliff_context: XliffContext, current_language: str) -> None:
     validate_units_max_lengths(xliff_context.units)
-    validate_page_with_xliff_context(page, xliff_context, current_language)
+    validate_page_with_xliff_context(obj, xliff_context, current_language)

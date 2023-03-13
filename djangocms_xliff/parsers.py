@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffConfigurationError, XliffError
 from djangocms_xliff.settings import XliffVersion
-from djangocms_xliff.types import UNIT_ID_DELIMITER, Unit, XliffContext
+from djangocms_xliff.types import ID_DELIMITER, Unit, XliffContext
 from djangocms_xliff.utils import get_xliff_namespaces, get_xliff_version
 
 
@@ -19,13 +19,13 @@ def parse_xliff_version_1_2(version: XliffVersion, xliff_element: Element) -> Xl
 
     source_language = file_element.attrib["source-language"]
     target_language = file_element.attrib["target-language"]
-    page_path = file_element.attrib["original"]
+    path = file_element.attrib["original"]
 
     tool_element = file_element.find("tool", namespaces=xml_namespaces)
     if tool_element is None:
         raise XliffError("XLIFF Error: Missing <tool> in <file>")
 
-    page_id = tool_element.attrib["tool-id"]
+    content_type_id, obj_id = tool_element.attrib["tool-id"].split(ID_DELIMITER)
 
     body_element = file_element.find("body", namespaces=xml_namespaces)
     if body_element is None:
@@ -34,7 +34,7 @@ def parse_xliff_version_1_2(version: XliffVersion, xliff_element: Element) -> Xl
     units = []
     for trans_unit in body_element.findall("trans-unit", namespaces=xml_namespaces):
         unit_id = trans_unit.attrib["id"]
-        plugin_id, field_name = unit_id.split(UNIT_ID_DELIMITER, 1)
+        plugin_id, field_name = unit_id.split(ID_DELIMITER, 1)
 
         field_type = trans_unit.attrib["extype"]
 
@@ -72,8 +72,9 @@ def parse_xliff_version_1_2(version: XliffVersion, xliff_element: Element) -> Xl
     return XliffContext(
         source_language=source_language,
         target_language=target_language,
-        page_id=int(page_id),
-        page_path=page_path,
+        content_type_id=int(content_type_id),
+        obj_id=int(obj_id),
+        path=path,
         units=units,
     )
 

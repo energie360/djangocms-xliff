@@ -1,14 +1,18 @@
 import io
 
+from cms.models import Page
+from django.contrib.contenttypes.models import ContentType
+
 from djangocms_xliff.parsers import parse_xliff_document
 from djangocms_xliff.types import Unit
 
 
-def test_parse_xliff_version_1_2_simple(create_xliff_context):
-    file_content = """<?xml version="1.0" encoding="utf-8" standalone="no"?>
+def test_parse_xliff_version_1_2_simple(create_xliff_page_context):
+    content_type_id = ContentType.objects.get_for_model(Page).id
+    file_content = f"""<?xml version="1.0" encoding="utf-8" standalone="no"?>
         <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
             <file original="test" datatype="plaintext" source-language="en" target-language="de">
-                <tool tool-id="1" tool-name="djangocms_xliff" tool-company-name="Energie 360°"/>
+                <tool tool-id="{content_type_id}__1" tool-name="djangocms_xliff" tool-company-name="Energie 360°"/>
                 <body>
                     <trans-unit id="123__title" resname="123__title" maxwidth="30" size-unit="char" extype="django.db.models.CharField">
                         <note>TestPlugin</note>
@@ -23,7 +27,7 @@ def test_parse_xliff_version_1_2_simple(create_xliff_context):
     """
     file_buffer = io.StringIO(file_content)
 
-    expected = create_xliff_context(
+    expected = create_xliff_page_context(
         units=[
             Unit(
                 plugin_id=123,
@@ -37,8 +41,8 @@ def test_parse_xliff_version_1_2_simple(create_xliff_context):
                 max_length=30,
             )
         ],
-        page_id=1,
-        page_path="test",
+        obj_id=1,
+        path="test",
         source_language="en",
         target_language="de",
     )
@@ -46,11 +50,12 @@ def test_parse_xliff_version_1_2_simple(create_xliff_context):
     assert parse_xliff_document(file_buffer) == expected
 
 
-def test_parse_xliff_version_1_2_utf_8_characters(create_xliff_context):
-    file_content = """<?xml version="1.0" encoding="utf-8" standalone="no"?>
+def test_parse_xliff_version_1_2_utf_8_characters(create_xliff_page_context):
+    content_type_id = ContentType.objects.get_for_model(Page).id
+    file_content = f"""<?xml version="1.0" encoding="utf-8" standalone="no"?>
         <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
             <file original="test/example" datatype="plaintext" source-language="de" target-language="fr">
-                <tool tool-id="1" tool-name="djangocms_xliff" tool-company-name="Energie 360°" />
+                <tool tool-id="{content_type_id}__1" tool-name="djangocms_xliff" tool-company-name="Energie 360°" />
                 <body>
                     <trans-unit id="5917__title" resname="5917__title" maxwidth="60" size-unit="char" extype="django.db.models.CharField">
                         <source><![CDATA[Willkommen]]></source>
@@ -72,7 +77,7 @@ def test_parse_xliff_version_1_2_utf_8_characters(create_xliff_context):
     """
     file_buffer = io.StringIO(file_content)
 
-    expected = create_xliff_context(
+    expected = create_xliff_page_context(
         units=[
             Unit(
                 plugin_id=5917,
@@ -97,8 +102,8 @@ def test_parse_xliff_version_1_2_utf_8_characters(create_xliff_context):
                 max_length=35,
             ),
         ],
-        page_path="test/example",
-        page_id=1,
+        path="test/example",
+        obj_id=1,
         source_language="de",
         target_language="fr",
     )
@@ -106,11 +111,12 @@ def test_parse_xliff_version_1_2_utf_8_characters(create_xliff_context):
     assert parse_xliff_document(file_buffer) == expected
 
 
-def test_parse_xliff_version_1_2_html(create_xliff_context):
-    file_content = """<?xml version="1.0" encoding="utf-8" standalone="no"?>
+def test_parse_xliff_version_1_2_html(create_xliff_page_context):
+    content_type_id = ContentType.objects.get_for_model(Page).id
+    file_content = f"""<?xml version="1.0" encoding="utf-8" standalone="no"?>
         <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
             <file original="test/example" datatype="plaintext" source-language="de" target-language="fr">
-                <tool tool-id="2" tool-name="djangocms_xliff" tool-company-name="Energie 360°" />
+                <tool tool-id="{content_type_id}__2" tool-name="djangocms_xliff" tool-company-name="Energie 360°" />
                 <body>
                     <trans-unit id="6008__body" resname="6008__body" extype="django.db.models.CharField">
                         <source><![CDATA[<h2>Willkommen</h2>
@@ -139,7 +145,7 @@ def test_parse_xliff_version_1_2_html(create_xliff_context):
     """
     file_buffer = io.StringIO(file_content)
 
-    expected = create_xliff_context(
+    expected = create_xliff_page_context(
         units=[
             Unit(
                 plugin_id=6008,
@@ -152,8 +158,8 @@ def test_parse_xliff_version_1_2_html(create_xliff_context):
                 target="""<h2>Bienvenue</h2>\n<h3>Ceci est un exemple de texte</h3>\n<p>Quelles sont les fonctions offertes par le package XLIFF?</p>\n<ul>\n    <li>Exporter une page CMS au format XLIFF</li>\n    <li>Importer le fichier XLIFF avec un aperçu</li>\n</ul>\n<p>Veuillez noter que les types complexes, les images, les médias et les liens ne font pas partie du processus de traduction et doivent être traduits manuellement.</p>""",
             ),
         ],
-        page_path="test/example",
-        page_id=2,
+        path="test/example",
+        obj_id=2,
         source_language="de",
         target_language="fr",
     )
