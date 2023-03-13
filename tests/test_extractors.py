@@ -5,7 +5,7 @@ import pytest
 
 from djangocms_xliff.extractors import (
     extract_page_metadata,
-    extract_units_from_page,
+    extract_units_from_obj,
     extract_units_from_placeholder,
     extract_units_from_plugin,
     extract_units_from_plugin_instance,
@@ -59,7 +59,7 @@ def test_extract_units_from_placeholder(page_with_one_field_in_plugin):
 def test_extract_units_from_page_one_field(page_with_one_field_in_plugin):
     page, _ = page_with_one_field_in_plugin()
 
-    assert extract_units_from_page(page, "en", include_metadata=False) == page_with_one_field_expected_units()
+    assert extract_units_from_obj(page, "en") == page_with_one_field_expected_units()
 
 
 @pytest.mark.django_db
@@ -91,7 +91,7 @@ def test_extract_units_from_page_multiple_fields(page_with_multiple_fields_in_on
         ),
     ]
 
-    assert extract_units_from_page(page, "en", include_metadata=False) == expected
+    assert extract_units_from_obj(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -123,7 +123,7 @@ def test_extract_units_from_page_nested_plugin(page_with_one_nested_plugin):
         ),
     ]
 
-    assert extract_units_from_page(page, "en", include_metadata=False) == expected
+    assert extract_units_from_obj(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -155,12 +155,12 @@ def test_extract_units_form_page_multiple_placeholders_one_plugin(page_with_mult
         ),
     ]
 
-    assert extract_units_from_page(page, "en", include_metadata=False) == expected
+    assert extract_units_from_obj(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
 def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
-    page_with_multiple_placeholders_and_multiple_plugins,
+        page_with_multiple_placeholders_and_multiple_plugins,
 ):
     page, main_plugin_1, main_plugin_2, second_plugin = page_with_multiple_placeholders_and_multiple_plugins()
 
@@ -211,7 +211,7 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
         ),
     ]
 
-    assert extract_units_from_page(page, "en", include_metadata=False) == expected
+    assert extract_units_from_obj(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db

@@ -3,10 +3,10 @@ from typing import List
 
 import pytest
 from cms.api import create_page
-from cms.models import CMSPlugin, Page
+from cms.models import CMSPlugin
 
 from djangocms_xliff.exceptions import XliffImportError
-from djangocms_xliff.extractors import extract_units_from_page
+from djangocms_xliff.extractors import extract_units_from_obj
 from djangocms_xliff.imports import (
     save_xliff_context,
     validate_page_with_xliff_context,
@@ -53,9 +53,9 @@ def test_validate_units_max_length():
 
 
 @pytest.mark.django_db
-def test_page_and_context_cant_have_different_id(create_xliff_context):
+def test_page_and_context_cant_have_different_id(create_xliff_page_context):
     page = create_page("Test", "testing.html", "de")
-    xliff_context = create_xliff_context([], page_id=page.pk + 1)  # Make sure the ids are always different
+    xliff_context = create_xliff_page_context([], obj_id=page.pk + 1)  # Make sure the ids are always different
 
     assert page.pk != xliff_context.page_id
     with pytest.raises(XliffImportError):
@@ -63,18 +63,18 @@ def test_page_and_context_cant_have_different_id(create_xliff_context):
 
 
 @pytest.mark.django_db
-def test_current_language_and_context_cant_have_different_target_language(create_xliff_context):
+def test_current_language_and_context_cant_have_different_target_language(create_xliff_page_context):
     current_language = "fr"
 
     page = create_page("Test", "testing.html", "de")
-    xliff_context = create_xliff_context([], target_language="de")
+    xliff_context = create_xliff_page_context([], target_language="de")
 
     with pytest.raises(XliffImportError):
         validate_page_with_xliff_context(page, xliff_context, current_language)
 
 
 @pytest.mark.django_db
-def test_extract_and_save_xliff_context(create_xliff_context, page_with_multiple_placeholders_and_multiple_plugins):
+def test_extract_and_save_xliff_context(create_xliff_page_context, page_with_multiple_placeholders_and_multiple_plugins):
     """
     This is an integration test, to see if extraction and import work
     It's basically what's happening in the UI, without validation
@@ -85,13 +85,13 @@ def test_extract_and_save_xliff_context(create_xliff_context, page_with_multiple
     page, main_plugin_1, main_plugin_2, second_plugin = page_with_multiple_placeholders_and_multiple_plugins()
 
     # Extract the xliff units from the page
-    units = extract_units_from_page(page, language_to_translate, include_metadata=False)
-    xliff_context = create_xliff_context(
+    units = extract_units_from_obj(page, language_to_translate)
+    xliff_context = create_xliff_page_context(
         units,
         source_language="de",
         target_language=language_to_translate,
-        page_id=page.pk,
-        page_path=page.get_path(language_to_translate),
+        obj_id=page.pk,
+        path=page.get_path(language_to_translate),
     )
 
     # Translate units

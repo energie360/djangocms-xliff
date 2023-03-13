@@ -3,22 +3,24 @@ from typing import Tuple
 import pytest
 from cms.api import add_plugin, create_page
 from cms.models import CMSPlugin, Page
+from django.contrib.contenttypes.models import ContentType
 
 from djangocms_xliff.types import XliffContext
 
 
 @pytest.fixture
-def create_xliff_context():
-    def _create_xliff_context(units, source_language="de", target_language="fr", page_id=1, page_path="/test"):
+def create_xliff_page_context():
+    def _create_xliff_page_context(units, source_language="de", target_language="fr", obj_id=1, path="/test"):
         return XliffContext(
             source_language=source_language,
             target_language=target_language,
-            page_id=page_id,
-            page_path=page_path,
+            content_type_id=ContentType.objects.get_for_model(Page).id,
+            obj_id=obj_id,
+            path=path,
             units=units,
         )
 
-    return _create_xliff_context
+    return _create_xliff_page_context
 
 
 @pytest.fixture

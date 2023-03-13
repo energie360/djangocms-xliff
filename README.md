@@ -177,6 +177,24 @@ def is_not_background(field: django.db.models.Field, instance: CMSPlugin) -> boo
     return field.name != "background"
 ```
 
+## Placeholders Outside the CMS
+
+Add a toolbar for your own Django model:
+
+```python
+from cms.toolbar_pool import toolbar_pool
+from djangocms_xliff.cms_toolbars import XliffModelToolbar
+
+from news.models import Article
+
+
+@toolbar_pool.register
+class ArticleXliffToolbar(XliffModelToolbar):
+    pass
+
+```
+
+
 ## Contribute
 
 Issues and pull requests are welcomed.

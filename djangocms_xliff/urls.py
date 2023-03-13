@@ -6,17 +6,17 @@ app_name = "djangocms_xliff"
 
 urlpatterns = [
     path(
-        "export/<int:page_id>/<str:current_language>/",
+        "export/<int:content_type_id>/<int:obj_id>/<str:current_language>/",
         ExportView.as_view(),
         name="export",
     ),
     path(
-        "upload/<int:page_id>/<str:current_language>/",
+        "upload/<int:content_type_id>/<int:obj_id>/<str:current_language>/",
         UploadView.as_view(),
         name="upload",
     ),
     path(
-        "import/<int:page_id>/<str:current_language>/",
+        "import/<int:content_type_id>/<int:obj_id>/<str:current_language>/",
         ImportView.as_view(),
         name="import",
     ),

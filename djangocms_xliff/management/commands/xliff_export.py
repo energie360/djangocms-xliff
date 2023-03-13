@@ -4,12 +4,14 @@ from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 
 from djangocms_xliff.exceptions import XliffError
-from djangocms_xliff.exports import export_page_as_xliff
+from djangocms_xliff.exports import export_content_as_xliff
+from djangocms_xliff.utils import get_obj
 
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument("page_id", type=int)
+        parser.add_argument("content_type_id", type=int)
+        parser.add_argument("obj_id", type=int)
         parser.add_argument(
             "xliff_source_language",
             type=str,
@@ -23,15 +25,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            page_id = options["page_id"]
+            content_type_id = options["content_type_id"]
+            obj_id = options["obj_id"]
             xliff_source_language = options["xliff_source_language"]
             target_language = options["target_language"]
 
             if xliff_source_language == target_language:
                 raise CommandError("xliff source language and current language should not be the same")
 
-            xliff_str, file_name = export_page_as_xliff(
-                page_id=page_id,
+            obj = get_obj(content_type_id, obj_id)
+            xliff_str, file_name = export_content_as_xliff(
+                obj=obj,
                 source_language=xliff_source_language,
                 target_language=target_language,
             )

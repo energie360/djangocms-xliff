@@ -4,13 +4,14 @@ from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 
 from djangocms_xliff.exceptions import XliffError
-from djangocms_xliff.extractors import extract_units_from_page
-from djangocms_xliff.utils import get_draft_page, group_units_by_plugin_id
+from djangocms_xliff.extractors import extract_units_from_obj
+from djangocms_xliff.utils import group_units_by_plugin_id, get_obj
 
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument("page_id", type=int)
+        parser.add_argument("content_type_id", type=int)
+        parser.add_argument("obj_id", type=int)
         parser.add_argument(
             "current_language",
             nargs="?",
@@ -21,15 +22,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            page_id = options["page_id"]
+            content_type_id = options["content_type_id"]
+            obj_id = options["obj_id"]
             current_language = options["current_language"]
 
-            page = get_draft_page(page_id)
-            units = extract_units_from_page(page, current_language)
+            obj = get_obj(content_type_id, obj_id)
+            units = extract_units_from_obj(obj, current_language)
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Found {len(units)} xliff units on page with id: {page.pk} and language: {current_language}"
+                    f"Found {len(units)} xliff units on page with id: {obj.id} and language: {current_language}"
                 )
             )
             self.stdout.write()

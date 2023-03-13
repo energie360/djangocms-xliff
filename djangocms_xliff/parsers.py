@@ -60,13 +60,13 @@ def parse_xliff_version_1_2(version: XliffVersion, xliff_element: Element) -> Xl
 
     source_language = file_element.attrib["source-language"]
     target_language = file_element.attrib["target-language"]
-    page_path = file_element.attrib["original"]
+    path = file_element.attrib["original"]
 
     tool_element = file_element.find("tool", namespaces=xml_namespaces)
     if tool_element is None:
         raise XliffError("XLIFF Error: Missing <tool> in <file>")
 
-    page_id = tool_element.attrib["tool-id"]
+     content_type_id, obj_id = tool_element.attrib["tool-id"].split(UNIT_ID_DELIMITER)
 
     body_element = file_element.find("body", namespaces=xml_namespaces)
     if body_element is None:
@@ -77,8 +77,9 @@ def parse_xliff_version_1_2(version: XliffVersion, xliff_element: Element) -> Xl
     return XliffContext(
         source_language=source_language,
         target_language=target_language,
-        page_id=int(page_id),
-        page_path=page_path,
+        content_type_id=int(content_type_id),
+        obj_id=int(obj_id),
+        path=path,
         units=units,
     )
 

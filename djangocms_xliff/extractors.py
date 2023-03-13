@@ -1,9 +1,9 @@
 import logging
+from typing import Generator, List, Type
 from functools import partial
-from typing import Generator, List
 
-from cms.models import CMSPlugin, Page, Placeholder, StaticPlaceholder
-from django.db.models import CharField, Field, SlugField, TextField, URLField
+from cms.models import CMSPlugin, Page, Placeholder, StaticPlaceholder, PlaceholderField
+from django.db.models import CharField, Field, SlugField, TextField, Model, URLField, OneToOneField
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffExportError
@@ -14,6 +14,7 @@ from djangocms_xliff.settings import (
     VALIDATORS,
 )
 from djangocms_xliff.types import Unit
+from djangocms_xliff.types import Unit, XliffObj
 from djangocms_xliff.utils import get_type_with_path
 
 logger = logging.getLogger(__name__)
@@ -110,6 +111,24 @@ def get_declared_page_placeholders(page: Page) -> Generator[Placeholder, None, N
         yield StaticPlaceholder.objects.get(code=declared_static_placeholder).draft
 
 
+def get_model_placeholders(obj: Type[Model]):
+    placeholders = []
+    for field in obj._meta.fields:
+        if type(field) == PlaceholderField or (
+                type(field) == OneToOneField and field.related_model == StaticPlaceholder):
+            placeholder = getattr(obj, field.name)
+            if placeholder:
+                placeholders.append(placeholder.draft)
+    return placeholders
+
+
+def get_placeholders(obj: XliffObj):
+    if type(obj) == Page:
+        return get_declared_page_placeholders(obj)
+    else:
+        return get_model_placeholders(obj)
+
+
 def extract_page_metadata(page: Page, language: str) -> List[Unit]:
     metadata_fields = {
         "title": _("Title"),
@@ -151,10 +170,10 @@ def extract_page_metadata(page: Page, language: str) -> List[Unit]:
     return units
 
 
-def extract_units_from_page(page: Page, language: str, include_metadata: bool = True) -> List[Unit]:
+def extract_units_from_obj(obj: XliffObj, language: str, include_metadata = False) -> List[Unit]:
     plugin_units = []
 
-    for placeholder in get_declared_page_placeholders(page):
+    for placeholder in get_placeholders(obj):
         logger.debug(
             f"Placeholder: {placeholder.pk}, is_static={placeholder.is_static}, "
             f"is_editable={placeholder.is_editable}, label={placeholder.get_label()}"
@@ -166,6 +185,6 @@ def extract_units_from_page(page: Page, language: str, include_metadata: bool = 
 
     page_units = []
     if include_metadata:
-        page_units.extend(extract_page_metadata(page, language))
+        page_units.extend(extract_page_metadata(obj, language))
 
     return [*page_units, *plugin_units]
