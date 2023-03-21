@@ -1,8 +1,8 @@
 import logging
 from typing import Generator, List, Type
 
-from cms.models import CMSPlugin, Page, Placeholder, StaticPlaceholder, PlaceholderField
-from django.db.models import CharField, Field, TextField, URLField, Model, OneToOneField
+from cms.models import CMSPlugin, Page, Placeholder, PlaceholderField, StaticPlaceholder
+from django.db.models import CharField, Field, Model, OneToOneField, TextField, URLField
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffExportError
@@ -107,8 +107,9 @@ def get_declared_page_placeholders(page: Page) -> Generator[Placeholder, None, N
 def get_model_placeholders(obj: Type[Model]):
     placeholders = []
     for field in obj._meta.fields:
-        if type(field) == PlaceholderField or (
-                type(field) == OneToOneField and field.related_model == StaticPlaceholder):
+        field_type = type(field)
+
+        if field_type == PlaceholderField or (field_type == OneToOneField and field.related_model == StaticPlaceholder):
             placeholder = getattr(obj, field.name)
             if placeholder:
                 placeholders.append(placeholder.draft)

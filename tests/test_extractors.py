@@ -157,7 +157,7 @@ def test_extract_units_form_page_multiple_placeholders_one_plugin(page_with_mult
 
 @pytest.mark.django_db
 def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
-        page_with_multiple_placeholders_and_multiple_plugins,
+    page_with_multiple_placeholders_and_multiple_plugins,
 ):
     page, main_plugin_1, main_plugin_2, second_plugin = page_with_multiple_placeholders_and_multiple_plugins()
 
@@ -209,3 +209,10 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
     ]
 
     assert extract_units_from_obj(page, "en") == expected
+
+
+@pytest.mark.django_db
+def test_extract_units_from_model(model_with_static_placeholder):
+    test_model, _ = model_with_static_placeholder()
+
+    assert extract_units_from_obj(test_model, "en") == page_with_one_field_expected_units()

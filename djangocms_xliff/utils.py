@@ -2,7 +2,7 @@ from itertools import groupby
 from typing import List, Tuple, Type
 
 from cms.models import Page
-from cms.utils.i18n import get_language_object, get_current_language
+from cms.utils.i18n import get_current_language, get_language_object
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import localtime, now
 from django.utils.translation import activate
@@ -70,6 +70,9 @@ def get_draft_page(page: Page) -> Page:
 
 def get_obj(content_type_id: int, obj_id: int) -> XliffObj:
     model = ContentType.objects.get_for_id(content_type_id).model_class()
+    if not model:
+        raise XliffError(f"ContentType Lookup for content_type_id {content_type_id} with obj_id {obj_id} failed")
+
     if model == Page:
         return get_draft_page_by_id(obj_id)
     else:
