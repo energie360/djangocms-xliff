@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Union, Type
+from typing import List, Optional, Tuple, TypeVar, Union
 
 from cms.models import Page
 from django.db.models import Model
@@ -10,7 +10,9 @@ from djangocms_xliff.settings import UNIT_ID_DELIMITER
 ExportContent = str
 ExportFileName = str
 ExportPage = Tuple[ExportContent, ExportFileName]
-XliffObj = Union[Page, Type[Model]]
+
+DjangoModelType = TypeVar("DjangoModelType", bound=Model)
+XliffObj = Union[Page, DjangoModelType]
 
 
 @dataclass
@@ -71,11 +73,11 @@ class XliffContext:
         return group_units_by_plugin_id(self.units)
 
     @property
-    def tool_id(self) -> str:
-        return f'{self.content_type_id}{UNIT_ID_DELIMITER}{self.obj_id}'
-
-    @property
     def obj(self):
         from djangocms_xliff.utils import get_obj
 
         return get_obj(self.content_type_id, self.obj_id)
+
+    @property
+    def tool_id(self) -> str:
+        return f'{self.content_type_id}{UNIT_ID_DELIMITER}{self.obj_id}'

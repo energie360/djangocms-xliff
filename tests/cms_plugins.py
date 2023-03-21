@@ -32,7 +32,7 @@ class TestParentPlugin(CMSPluginBase):
     name = "Test parent plugin"
     render_template = "testing.html"
     allow_children = True
-    child_classes = TEST_TEMPLATE
+    child_classes = ["TestChildPlugin"]
 
 
 @plugin_pool.register_plugin
@@ -41,4 +41,4 @@ class TestChildPlugin(CMSPluginBase):
     name = "Test child plugin"
     render_template = "testing.html"
     require_parent = True
-    parent_classes = TEST_TEMPLATE
+    parent_classes = ["TestParentPlugin"]

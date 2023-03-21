@@ -13,7 +13,6 @@ from djangocms_xliff.settings import (
     UNIT_ID_METADATA_ID,
     VALIDATORS,
 )
-from djangocms_xliff.types import Unit
 from djangocms_xliff.types import Unit, XliffObj
 from djangocms_xliff.utils import get_type_with_path
 
@@ -114,8 +113,9 @@ def get_declared_page_placeholders(page: Page) -> Generator[Placeholder, None, N
 def get_model_placeholders(obj: Type[Model]):
     placeholders = []
     for field in obj._meta.fields:
-        if type(field) == PlaceholderField or (
-                type(field) == OneToOneField and field.related_model == StaticPlaceholder):
+        field_type = type(field)
+
+        if field_type == PlaceholderField or (field_type == OneToOneField and field.related_model == StaticPlaceholder):
             placeholder = getattr(obj, field.name)
             if placeholder:
                 placeholders.append(placeholder.draft)

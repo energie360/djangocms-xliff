@@ -2,10 +2,12 @@ from typing import Tuple
 
 import pytest
 from cms.api import add_plugin, create_page
-from cms.models import CMSPlugin, Page
+from cms.models import CMSPlugin, Page, StaticPlaceholder
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Model
 
 from djangocms_xliff.types import XliffContext
+from tests.models import TestModelStaticPlaceholder
 
 
 @pytest.fixture
@@ -158,6 +160,24 @@ def page_with_multiple_placeholders_and_multiple_plugins(create_draft_page):
         return page, main_plugin_1, main_plugin_2, second_plugin
 
     return _page_with_multiple_placeholders_and_multiple_plugins
+
+
+@pytest.fixture
+def model_with_static_placeholder():
+    def _model_with_one_field_in_plugin() -> Tuple[Model, CMSPlugin]:
+        language = "en"
+
+        static_placeholder = StaticPlaceholder.objects.create(name="test", code="main")
+
+        plugin = add_plugin(
+            static_placeholder.draft, plugin_type="TestOneFieldPlugin", language=language, body="First plugin"
+        )
+
+        test_model = TestModelStaticPlaceholder.objects.create(placeholder=static_placeholder)
+
+        return test_model, plugin
+
+    return _model_with_one_field_in_plugin
 
 
 @pytest.fixture
