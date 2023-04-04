@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 from cms.models import Page
 from django.utils.translation import gettext as _
 
-UNIT_ID_DELIMITER = "__"
+from djangocms_xliff.settings import UNIT_ID_DELIMITER
 
 ExportContent = str
 ExportFileName = str
@@ -60,12 +60,6 @@ class XliffContext:
     page_id: int
     page_path: str
     units: List[Unit]
-
-    @property
-    def grouped_units(self) -> List[Tuple[int, List[Unit]]]:
-        from djangocms_xliff.utils import group_units_by_plugin_id
-
-        return group_units_by_plugin_id(self.units)
 
     @property
     def page(self) -> Page:

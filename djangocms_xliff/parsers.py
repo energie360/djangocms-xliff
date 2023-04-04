@@ -5,32 +5,12 @@ from defusedxml.ElementTree import parse
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffConfigurationError, XliffError
-from djangocms_xliff.settings import XliffVersion
-from djangocms_xliff.types import UNIT_ID_DELIMITER, Unit, XliffContext
+from djangocms_xliff.settings import UNIT_ID_DELIMITER, XliffVersion
+from djangocms_xliff.types import Unit, XliffContext
 from djangocms_xliff.utils import get_xliff_namespaces, get_xliff_version
 
 
-def parse_xliff_version_1_2(version: XliffVersion, xliff_element: Element) -> XliffContext:
-    xml_namespaces = get_xliff_namespaces(version)
-
-    file_element = xliff_element.find("file", namespaces=xml_namespaces)
-    if file_element is None:
-        raise XliffError("XLIFF Error: Missing file tag")
-
-    source_language = file_element.attrib["source-language"]
-    target_language = file_element.attrib["target-language"]
-    page_path = file_element.attrib["original"]
-
-    tool_element = file_element.find("tool", namespaces=xml_namespaces)
-    if tool_element is None:
-        raise XliffError("XLIFF Error: Missing <tool> in <file>")
-
-    page_id = tool_element.attrib["tool-id"]
-
-    body_element = file_element.find("body", namespaces=xml_namespaces)
-    if body_element is None:
-        raise XliffError("XLIFF Error: Missing <body> in <file>")
-
+def _parse_xliff_units_version_1_2(xml_namespaces: dict, body_element: Element):
     units = []
     for trans_unit in body_element.findall("trans-unit", namespaces=xml_namespaces):
         unit_id = trans_unit.attrib["id"]
@@ -68,6 +48,31 @@ def parse_xliff_version_1_2(version: XliffVersion, xliff_element: Element) -> Xl
             max_length=int(max_length) if max_length else None,
         )
         units.append(unit)
+    return units
+
+
+def parse_xliff_version_1_2(version: XliffVersion, xliff_element: Element) -> XliffContext:
+    xml_namespaces = get_xliff_namespaces(version)
+
+    file_element = xliff_element.find("file", namespaces=xml_namespaces)
+    if file_element is None:
+        raise XliffError("XLIFF Error: Missing file tag")
+
+    source_language = file_element.attrib["source-language"]
+    target_language = file_element.attrib["target-language"]
+    page_path = file_element.attrib["original"]
+
+    tool_element = file_element.find("tool", namespaces=xml_namespaces)
+    if tool_element is None:
+        raise XliffError("XLIFF Error: Missing <tool> in <file>")
+
+    page_id = tool_element.attrib["tool-id"]
+
+    body_element = file_element.find("body", namespaces=xml_namespaces)
+    if body_element is None:
+        raise XliffError("XLIFF Error: Missing <body> in <file>")
+
+    units = _parse_xliff_units_version_1_2(xml_namespaces, body_element)
 
     return XliffContext(
         source_language=source_language,
