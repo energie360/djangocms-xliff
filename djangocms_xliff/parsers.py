@@ -37,7 +37,7 @@ def _parse_xliff_units_version_1_2(xml_namespaces: dict, body_element: Element):
         field_verbose_name = next(notes).text
 
         unit = Unit(
-            plugin_id=int(plugin_id),
+            plugin_id=plugin_id,
             plugin_type=plugin_type if plugin_type else "",
             plugin_name=plugin_name if plugin_name else "",
             field_name=field_name,

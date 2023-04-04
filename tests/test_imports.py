@@ -1,8 +1,9 @@
+from functools import partial
 from typing import List
 
 import pytest
 from cms.api import create_page
-from cms.models import CMSPlugin
+from cms.models import CMSPlugin, Page
 
 from djangocms_xliff.exceptions import XliffImportError
 from djangocms_xliff.extractors import extract_units_from_page
@@ -11,13 +12,14 @@ from djangocms_xliff.imports import (
     validate_page_with_xliff_context,
     validate_units_max_lengths,
 )
+from djangocms_xliff.settings import UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
 
 
 def get_character_length_test_units() -> List[Unit]:
     return [
         Unit(
-            plugin_id=123,
+            plugin_id="123",
             plugin_type="TestPlugin",
             plugin_name="Test plugin",
             field_name="title",
@@ -27,7 +29,7 @@ def get_character_length_test_units() -> List[Unit]:
             max_length=30,
         ),
         Unit(
-            plugin_id=123,
+            plugin_id="123",
             plugin_type="TestPlugin",
             plugin_name="Test plugin",
             field_name="lead",
@@ -53,9 +55,9 @@ def test_validate_units_max_length():
 @pytest.mark.django_db
 def test_page_and_context_cant_have_different_id(create_xliff_context):
     page = create_page("Test", "testing.html", "de")
-    xliff_context = create_xliff_context([], page_id=page.id + 1)  # Make sure the ids are always different
+    xliff_context = create_xliff_context([], page_id=page.pk + 1)  # Make sure the ids are always different
 
-    assert page.id != xliff_context.page_id
+    assert page.pk != xliff_context.page_id
     with pytest.raises(XliffImportError):
         validate_page_with_xliff_context(page, xliff_context, "de")
 
@@ -113,3 +115,75 @@ def test_extract_and_save_xliff_context(create_xliff_context, page_with_multiple
     assert main_plugin_1_updated.body == main_plugin_1_target_text
     assert main_plugin_2_updated.title == main_plugin_2_target_text_title
     assert main_plugin_2_updated.lead == main_plugin_2_target_text_lead
+
+
+@pytest.mark.django_db
+def test_save_page_with_metadata(page_with_metadata, create_xliff_context):
+    language_to_translate = "de"
+
+    # Translate units
+    title_target_text = "Titel übersetzt"
+    page_title_target_text = "Seitentitel übersetzt"
+    menu_title_target_text = "Menütitel übersetzt"
+    meta_description_target_text = "Meta Beschreibung übersetzt"
+
+    page_unit = partial(
+        Unit,
+        plugin_id=UNIT_ID_METADATA_ID,
+        plugin_type=UNIT_ID_METADATA_ID,
+        plugin_name=UNIT_ID_METADATA_ID,
+        field_type="django.db.models.fields.CharField",
+    )
+
+    title_obj = page_with_metadata.get_title_obj(language="en")
+
+    units = [
+        page_unit(
+            field_name="title",
+            source=title_obj.title,
+            target=title_target_text,
+            field_verbose_name="Title",
+            max_length=255,
+        ),
+        page_unit(
+            field_name="page_title",
+            source=title_obj.page_title,
+            target=page_title_target_text,
+            field_verbose_name="Page Title",
+            max_length=255,
+        ),
+        page_unit(
+            field_name="menu_title",
+            source=title_obj.menu_title,
+            target=menu_title_target_text,
+            field_verbose_name="Menu Title",
+            max_length=255,
+        ),
+        page_unit(
+            field_type="django.db.models.fields.TextField",
+            field_name="meta_description",
+            source=title_obj.meta_description,
+            target=meta_description_target_text,
+            field_verbose_name="Description meta tag",
+            max_length=None,
+        ),
+    ]
+
+    xliff_context = create_xliff_context(
+        units,
+        source_language="en",
+        target_language=language_to_translate,
+        page_id=page_with_metadata.pk,
+        page_path=page_with_metadata.get_path(language_to_translate),
+    )
+
+    # Import the units
+    save_xliff_context(xliff_context)
+
+    updated_page = Page.objects.get(pk=xliff_context.page_id)
+    updated_title_obj = updated_page.get_title_obj(language=language_to_translate)
+
+    assert updated_title_obj.title == title_target_text
+    assert updated_title_obj.menu_title == menu_title_target_text
+    assert updated_title_obj.page_title == page_title_target_text
+    assert updated_title_obj.meta_description == meta_description_target_text

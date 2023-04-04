@@ -53,14 +53,14 @@ def get_draft_page(page_id: int) -> Page:
         if not page.publisher_is_draft:
             raise XliffError(
                 "Page is not a draft. You probably want to use a draft instead of a published page. "
-                f"Draft page id would be: {page.publisher_public.id}"
+                f"Draft page id would be: {page.publisher_public.pk}"
             )
         return page
     except Page.DoesNotExist:
         raise XliffError(f"Page with id: {page_id} does not exist")
 
 
-def group_units_by_plugin_id(units: List[Unit]) -> List[Tuple[int, List[Unit]]]:
+def group_units_by_plugin_id(units: List[Unit]) -> List[Tuple[str, List[Unit]]]:
     return [(plugin_id, list(units)) for plugin_id, units in groupby(units, lambda u: u.plugin_id)]
 
 

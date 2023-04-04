@@ -26,7 +26,7 @@ def test_parse_xliff_version_1_2_simple(create_xliff_context):
     expected = create_xliff_context(
         units=[
             Unit(
-                plugin_id=123,
+                plugin_id="123",
                 plugin_type="TestPlugin",
                 plugin_name="Test Plugin",
                 field_name="title",
@@ -52,14 +52,14 @@ def test_parse_xliff_version_1_2_utf_8_characters(create_xliff_context):
             <file original="test/example" datatype="plaintext" source-language="de" target-language="fr">
                 <tool tool-id="1" tool-name="djangocms_xliff" tool-company-name="Energie 360°" />
                 <body>
-                    <trans-unit id="5917__title" resname="5917__title" maxwidth="60" size-unit="char" extype="django.db.models.CharField">
+                    <trans-unit id="123__title" resname="123__title" maxwidth="60" size-unit="char" extype="django.db.models.CharField">
                         <source><![CDATA[Willkommen]]></source>
                         <target><![CDATA[Accueillir]]></target>
                         <note>TestBlockPlugin</note>
                         <note>Test Block Plugin</note>
                         <note>Title</note>
                     </trans-unit>
-                    <trans-unit id="5918__title" resname="5918__title" maxwidth="35" size-unit="char" extype="django.db.models.CharField">
+                    <trans-unit id="345__title" resname="345__title" maxwidth="35" size-unit="char" extype="django.db.models.CharField">
                         <source><![CDATA[Das ist ein Beispiel]]></source>
                         <target><![CDATA[This is an example]]></target>
                         <note>TestBlockSlidePlugin</note>
@@ -75,7 +75,7 @@ def test_parse_xliff_version_1_2_utf_8_characters(create_xliff_context):
     expected = create_xliff_context(
         units=[
             Unit(
-                plugin_id=5917,
+                plugin_id="123",
                 plugin_type="TestBlockPlugin",
                 plugin_name="Test Block Plugin",
                 field_name="title",
@@ -86,7 +86,7 @@ def test_parse_xliff_version_1_2_utf_8_characters(create_xliff_context):
                 max_length=60,
             ),
             Unit(
-                plugin_id=5918,
+                plugin_id="345",
                 plugin_type="TestBlockSlidePlugin",
                 plugin_name="Test Block Slide Plugin",
                 field_name="title",
@@ -112,7 +112,7 @@ def test_parse_xliff_version_1_2_html(create_xliff_context):
             <file original="test/example" datatype="plaintext" source-language="de" target-language="fr">
                 <tool tool-id="2" tool-name="djangocms_xliff" tool-company-name="Energie 360°" />
                 <body>
-                    <trans-unit id="6008__body" resname="6008__body" extype="django.db.models.CharField">
+                    <trans-unit id="789__body" resname="789__body" extype="django.db.models.CharField">
                         <source><![CDATA[<h2>Willkommen</h2>
 <h3>Das ist ein Beispieltext</h3>
 <p>Welche funktionen bietet das XLIFF package?</p>
@@ -142,7 +142,7 @@ def test_parse_xliff_version_1_2_html(create_xliff_context):
     expected = create_xliff_context(
         units=[
             Unit(
-                plugin_id=6008,
+                plugin_id="789",
                 plugin_type="Richtext",
                 plugin_name="Richtext",
                 field_name="body",

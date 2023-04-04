@@ -139,7 +139,7 @@ def link_field_extractor(instance: CMSPlugin, field: LinkField, source: Any) -> 
     text = source.find_text()
     return [
         Unit(
-            plugin_id=instance.id,
+            plugin_id=str(instance.pk),
             plugin_type=instance.plugin_type,
             plugin_name=instance.get_plugin_name(),
             field_name=field.name,

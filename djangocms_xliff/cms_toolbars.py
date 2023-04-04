@@ -39,7 +39,7 @@ class XliffToolbar(CMSToolbar):
                 reverse_xliff = partial(
                     reverse,
                     kwargs={
-                        "page_id": self.draft_page.id,
+                        "page_id": self.draft_page.pk,
                         "current_language": self.current_lang,
                     },
                 )

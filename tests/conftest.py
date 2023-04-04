@@ -23,10 +23,20 @@ def create_xliff_context():
 
 @pytest.fixture
 def create_draft_page():
-    def _create_draft_page(language: str) -> Page:
-        return create_page(
-            "Test", "testing.html", language, published=False, slug="test-example", overwrite_url="test/example"
-        )
+    def _create_draft_page(language: str, **extra_kwargs) -> Page:
+        page_kwargs = {
+            "title": "Test",
+            "template": "testing.html",
+            "language": language,
+            "published": False,
+            "slug": "test-example",
+            "overwrite_url": "test/example",
+        }
+
+        if extra_kwargs:
+            page_kwargs.update(**extra_kwargs)
+
+        return create_page(**page_kwargs)
 
     return _create_draft_page
 
@@ -146,3 +156,14 @@ def page_with_multiple_placeholders_and_multiple_plugins(create_draft_page):
         return page, main_plugin_1, main_plugin_2, second_plugin
 
     return _page_with_multiple_placeholders_and_multiple_plugins
+
+
+@pytest.fixture
+def page_with_metadata(create_draft_page):
+    return create_draft_page(
+        language="en",
+        title="Title Test",
+        menu_title="Menu Title Test",
+        page_title="Page Title Test",
+        meta_description="Menu Description Test",
+    )

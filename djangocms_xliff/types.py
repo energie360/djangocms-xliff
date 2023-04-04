@@ -13,7 +13,7 @@ ExportPage = Tuple[ExportContent, ExportFileName]
 
 @dataclass
 class Unit:
-    plugin_id: int
+    plugin_id: str
     plugin_type: str
     plugin_name: str
 
