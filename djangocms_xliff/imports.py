@@ -7,12 +7,12 @@ from django.utils.translation import gettext as _
 from djangocms_xliff.exceptions import XliffImportError
 from djangocms_xliff.settings import FIELD_IMPORTERS, UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit, XliffContext
-from djangocms_xliff.utils import get_lang_name, group_units_by_plugin_id
+from djangocms_xliff.utils import get_lang_name
 
 logger = logging.getLogger(__name__)
 
 
-def save_xliff_units_for_page(units: List[Unit], target_title_obj: Title):
+def save_xliff_units_for_page(units: List[Unit], target_title_obj: Title) -> None:
     for unit in units:
         field_name = unit.field_name
         target = unit.target
@@ -22,7 +22,7 @@ def save_xliff_units_for_page(units: List[Unit], target_title_obj: Title):
     target_title_obj.save()
 
 
-def save_xliff_units_for_cms_plugins(units: List[Unit], plugin_id: str):
+def save_xliff_units_for_cms_plugins(units: List[Unit], plugin_id: str) -> None:
     try:
         cms_plugin = CMSPlugin.objects.get(pk=plugin_id)
     except CMSPlugin.DoesNotExist:
@@ -47,7 +47,7 @@ def save_xliff_context(xliff_context: XliffContext) -> None:
     page = xliff_context.page
     target_title_obj = page.get_title_obj(language=xliff_context.target_language)
 
-    for plugin_id, units in group_units_by_plugin_id(xliff_context.units):
+    for plugin_id, units in xliff_context.grouped_units:
         if plugin_id == UNIT_ID_METADATA_ID:
             save_xliff_units_for_page(units, target_title_obj)
         else:

@@ -62,6 +62,12 @@ class XliffContext:
     units: List[Unit]
 
     @property
+    def grouped_units(self) -> List[Tuple[str, List[Unit]]]:
+        from djangocms_xliff.utils import group_units_by_plugin_id
+
+        return group_units_by_plugin_id(self.units)
+
+    @property
     def page(self) -> Page:
         from djangocms_xliff.utils import get_draft_page
 

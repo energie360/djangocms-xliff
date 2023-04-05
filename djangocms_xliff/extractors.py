@@ -152,14 +152,20 @@ def extract_page_metadata(page: Page, language: str) -> List[Unit]:
 
 
 def extract_units_from_page(page: Page, language: str, include_metadata: bool = True) -> List[Unit]:
-    units = extract_page_metadata(page, language) if include_metadata else []
+    plugin_units = []
+
     for placeholder in get_declared_page_placeholders(page):
         logger.debug(
             f"Placeholder: {placeholder.pk}, is_static={placeholder.is_static}, "
             f"is_editable={placeholder.is_editable}, label={placeholder.get_label()}"
         )
-        units.extend(extract_units_from_placeholder(placeholder, language))
+        plugin_units.extend(extract_units_from_placeholder(placeholder, language))
 
-    if len(units) == 0:
+    if len(plugin_units) == 0:
         raise XliffExportError(_("No plugins found. You need to copy plugins from an existing page"))
-    return units
+
+    page_units = []
+    if include_metadata:
+        page_units.extend(extract_page_metadata(page, language))
+
+    return [*page_units, *plugin_units]
