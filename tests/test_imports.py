@@ -72,7 +72,9 @@ def test_current_language_and_context_cant_have_different_target_language(create
 
 
 @pytest.mark.django_db
-def test_extract_and_save_xliff_context(create_xliff_page_context, page_with_multiple_placeholders_and_multiple_plugins):
+def test_extract_and_save_xliff_context(
+    create_xliff_page_context, page_with_multiple_placeholders_and_multiple_plugins
+):
     """
     This is an integration test, to see if extraction and import work
     It's basically what's happening in the UI, without validation

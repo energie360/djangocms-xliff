@@ -4,7 +4,6 @@ from typing import Type
 
 from django.contrib.admin import site
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.contenttypes.models import ContentType
 from django.forms import Form
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -53,8 +52,7 @@ class ExportView(XliffView):
         if not form.is_valid():
             return self.render_template(form, current_language)
 
-        content_type = ContentType.objects.get_for_id(content_type_id)
-        obj = content_type.model_class().objects.get(id=obj_id)
+        obj = get_obj(content_type_id, obj_id)
         try:
             xliff_str, file_name = export_content_as_xliff(
                 obj=obj,
@@ -76,8 +74,8 @@ class ExportView(XliffView):
 
         line1_params = {"import_from": _("Import from XLIFF")}
         line1 = (
-                _('Translate this file in your preferred XLIFF tool and import later on with "%(import_from)s".')
-                % line1_params
+            _('Translate this file in your preferred XLIFF tool and import later on with "%(import_from)s".')
+            % line1_params
         )
 
         context = {
@@ -138,7 +136,7 @@ class UploadView(XliffView):
             "count_plugins": len(xliff_context.units),
         }
         description = (
-                _('Found %(count_plugins)d plugins that will be imported to the "%(language)s" page.') % description_params
+            _('Found %(count_plugins)d plugins that will be imported to the "%(language)s" page.') % description_params
         )
 
         note = _(
@@ -174,9 +172,8 @@ class ImportView(XliffView):
             save_xliff_context(xliff_context)
 
             # Determine the HttpResponse for the change_view stage.
-            content_type = ContentType.objects.get_for_id(content_type_id)
-            admin = site._registry[content_type.model_class()]
             obj = get_obj(content_type_id, obj_id)
+            admin = site._registry[obj._meta.model]
             return admin.response_change(request, obj)
         except XliffError as e:
             return self.error_response(e)

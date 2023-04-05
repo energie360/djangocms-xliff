@@ -5,8 +5,10 @@ from djangocms_xliff.extractors import extract_units_from_obj
 from djangocms_xliff.renderer import render_xliff_document
 from djangocms_xliff.types import ExportPage, XliffContext, XliffObj
 from djangocms_xliff.utils import (
+    get_draft_page,
+    get_path,
     get_xliff_export_file_name,
-    get_xliff_version, get_draft_page, get_path,
+    get_xliff_version,
 )
 
 
@@ -22,10 +24,10 @@ def convert_obj_to_xliff_context(obj: XliffObj, source_language: str, target_lan
 
 
 def export_content_as_xliff(
-        obj: XliffObj,
-        source_language: str,
-        target_language: str,
-        version: str = "1.2",
+    obj: XliffObj,
+    source_language: str,
+    target_language: str,
+    version: str = "1.2",
 ) -> ExportPage:
     xliff_version = get_xliff_version(version)
 

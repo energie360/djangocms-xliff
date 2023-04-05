@@ -39,10 +39,7 @@ def validate_page_with_xliff_context(obj: XliffObj, xliff_context: XliffContext,
     xliff_obj_id = xliff_context.obj_id
     if obj_id != xliff_obj_id:
         error_message = _('Selected page id: "%(obj_id)s" is not the same as xliff page id: "%(xliff_obj_id)s"')
-        error_params = {
-            "obj_id": obj_id,
-            "xliff_obj_id": xliff_obj_id
-        }
+        error_params = {"obj_id": obj_id, "xliff_obj_id": xliff_obj_id}
         raise XliffImportError(error_message % error_params)
 
     xliff_target_language = xliff_context.target_language

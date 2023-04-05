@@ -63,5 +63,5 @@ class XliffPageToolbar(XliffToolbar):
 class XliffModelToolbar(XliffToolbar):
     def user_has_permissions(self, obj) -> bool:
         if obj and type(obj) != Page:
-            return self.request.user.has_perm(f'change_{obj._meta.model_name}')
+            return self.request.user.has_perm(f"change_{obj._meta.model_name}")
         return False

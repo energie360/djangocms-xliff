@@ -5,7 +5,7 @@ from django.core.management import BaseCommand, CommandError
 
 from djangocms_xliff.exceptions import XliffError
 from djangocms_xliff.extractors import extract_units_from_obj
-from djangocms_xliff.utils import group_units_by_plugin_id, get_obj
+from djangocms_xliff.utils import get_obj, group_units_by_plugin_id
 
 
 class Command(BaseCommand):
