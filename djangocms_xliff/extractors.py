@@ -3,7 +3,7 @@ from functools import partial
 from typing import Generator, List
 
 from cms.models import CMSPlugin, Page, Placeholder, StaticPlaceholder
-from django.db.models import CharField, Field, TextField, URLField
+from django.db.models import CharField, Field, SlugField, TextField, URLField
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffExportError
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def has_translatable_type(field: Field) -> bool:
-    return type(field) in [CharField, TextField, URLField, *FIELDS]
+    return type(field) in [CharField, TextField, URLField, SlugField, *FIELDS]
 
 
 def is_not_cms_default(name: str) -> bool:
@@ -113,6 +113,7 @@ def get_declared_page_placeholders(page: Page) -> Generator[Placeholder, None, N
 def extract_page_metadata(page: Page, language: str) -> List[Unit]:
     metadata_fields = {
         "title": _("Title"),
+        "slug": _("Slug"),
         "menu_title": _("Menu Title"),
         "page_title": _("Page Title"),
         "meta_description": _("Description meta tag"),
@@ -125,32 +126,33 @@ def extract_page_metadata(page: Page, language: str) -> List[Unit]:
     title = page.get_title_obj(language=language)
 
     units = []
-    for title_field in title._meta.fields:
+    for metadata_field, metadata_field_description in metadata_fields.items():
+        title_field = title._meta.get_field(metadata_field)
+
+        if not is_field_to_translate(title_field, title):
+            continue
+
         title_field_name = title_field.name
 
-        if title_field_name in metadata_fields:
-            if not is_field_to_translate(title_field, title):
-                continue
+        source = getattr(title, title_field_name, None)
+        if not source:
+            continue
 
-            source = getattr(title, title_field_name, None)
-            if not source:
-                continue
-
-            units.append(
-                page_unit(
-                    field_name=title_field_name,
-                    field_type=get_type_with_path(title_field),
-                    field_verbose_name=metadata_fields[title_field_name],
-                    source=source,
-                    max_length=title_field.max_length,
-                )
+        units.append(
+            page_unit(
+                field_name=title_field_name,
+                field_type=get_type_with_path(title_field),
+                field_verbose_name=metadata_field_description,
+                source=source,
+                max_length=title_field.max_length,
             )
+        )
 
     return units
 
 
-def extract_units_from_page(page: Page, language: str) -> List[Unit]:
-    units = []
+def extract_units_from_page(page: Page, language: str, include_metadata: bool = True) -> List[Unit]:
+    units = extract_page_metadata(page, language) if include_metadata else []
     for placeholder in get_declared_page_placeholders(page):
         logger.debug(
             f"Placeholder: {placeholder.pk}, is_static={placeholder.is_static}, "

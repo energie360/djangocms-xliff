@@ -85,7 +85,7 @@ def test_extract_and_save_xliff_context(create_xliff_context, page_with_multiple
     page, main_plugin_1, main_plugin_2, second_plugin = page_with_multiple_placeholders_and_multiple_plugins()
 
     # Extract the xliff units from the page
-    units = extract_units_from_page(page, language_to_translate)
+    units = extract_units_from_page(page, language_to_translate, include_metadata=False)
     xliff_context = create_xliff_context(
         units,
         source_language="de",
@@ -123,6 +123,7 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_context):
 
     # Translate units
     title_target_text = "Titel übersetzt"
+    slug_target_text = "Slug übersetzt"
     page_title_target_text = "Seitentitel übersetzt"
     menu_title_target_text = "Menütitel übersetzt"
     meta_description_target_text = "Meta Beschreibung übersetzt"
@@ -150,6 +151,13 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_context):
             source=title_obj.page_title,
             target=page_title_target_text,
             field_verbose_name="Page Title",
+            max_length=255,
+        ),
+        page_unit(
+            field_name="slug",
+            source=title_obj.page_title,
+            target=slug_target_text,
+            field_verbose_name="Slug",
             max_length=255,
         ),
         page_unit(

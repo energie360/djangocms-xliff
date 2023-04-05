@@ -59,7 +59,7 @@ def test_extract_units_from_placeholder(page_with_one_field_in_plugin):
 def test_extract_units_from_page_one_field(page_with_one_field_in_plugin):
     page, _ = page_with_one_field_in_plugin()
 
-    assert extract_units_from_page(page, "en") == page_with_one_field_expected_units()
+    assert extract_units_from_page(page, "en", include_metadata=False) == page_with_one_field_expected_units()
 
 
 @pytest.mark.django_db
@@ -91,7 +91,7 @@ def test_extract_units_from_page_multiple_fields(page_with_multiple_fields_in_on
         ),
     ]
 
-    assert extract_units_from_page(page, "en") == expected
+    assert extract_units_from_page(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -123,7 +123,7 @@ def test_extract_units_from_page_nested_plugin(page_with_one_nested_plugin):
         ),
     ]
 
-    assert extract_units_from_page(page, "en") == expected
+    assert extract_units_from_page(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -155,7 +155,7 @@ def test_extract_units_form_page_multiple_placeholders_one_plugin(page_with_mult
         ),
     ]
 
-    assert extract_units_from_page(page, "en") == expected
+    assert extract_units_from_page(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -211,7 +211,7 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
         ),
     ]
 
-    assert extract_units_from_page(page, "en") == expected
+    assert extract_units_from_page(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -230,10 +230,11 @@ def test_extract_units_form_page_metadata(page_with_metadata):
     expected = [
         page_unit(field_name="title", source=title_obj.title, target="", field_verbose_name="Title", max_length=255),
         page_unit(
-            field_name="page_title",
-            source=title_obj.page_title,
+            field_type="django.db.models.fields.SlugField",
+            field_name="slug",
+            source=title_obj.slug,
             target="",
-            field_verbose_name="Page Title",
+            field_verbose_name="Slug",
             max_length=255,
         ),
         page_unit(
@@ -241,6 +242,13 @@ def test_extract_units_form_page_metadata(page_with_metadata):
             source=title_obj.menu_title,
             target="",
             field_verbose_name="Menu Title",
+            max_length=255,
+        ),
+        page_unit(
+            field_name="page_title",
+            source=title_obj.page_title,
+            target="",
+            field_verbose_name="Page Title",
             max_length=255,
         ),
         page_unit(
