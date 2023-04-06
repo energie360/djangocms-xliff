@@ -14,7 +14,7 @@ def convert_page_to_xliff_context(page: Page, source_language: str, target_langu
     return XliffContext(
         source_language=source_language,
         target_language=target_language,
-        page_id=page.id,
+        page_id=page.pk,
         page_path=page.get_path(target_language),
         units=extract_units_from_page(page, target_language),
     )

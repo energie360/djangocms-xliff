@@ -1,20 +1,23 @@
+from functools import partial
 from typing import List
 
 import pytest
 
 from djangocms_xliff.extractors import (
+    extract_page_metadata,
     extract_units_from_page,
     extract_units_from_placeholder,
     extract_units_from_plugin,
     extract_units_from_plugin_instance,
 )
+from djangocms_xliff.settings import UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
 
 
 def page_with_one_field_expected_units() -> List[Unit]:
     return [
         Unit(
-            plugin_id=1,
+            plugin_id="1",
             plugin_type="TestOneFieldPlugin",
             plugin_name="Test one field plugin",
             field_name="body",
@@ -56,7 +59,7 @@ def test_extract_units_from_placeholder(page_with_one_field_in_plugin):
 def test_extract_units_from_page_one_field(page_with_one_field_in_plugin):
     page, _ = page_with_one_field_in_plugin()
 
-    assert extract_units_from_page(page, "en") == page_with_one_field_expected_units()
+    assert extract_units_from_page(page, "en", include_metadata=False) == page_with_one_field_expected_units()
 
 
 @pytest.mark.django_db
@@ -65,7 +68,7 @@ def test_extract_units_from_page_multiple_fields(page_with_multiple_fields_in_on
 
     expected = [
         Unit(
-            plugin_id=plugin.pk,
+            plugin_id=str(plugin.pk),
             plugin_type="TestMultipleFieldsPlugin",
             plugin_name="Test multiple fields plugin",
             field_name="title",
@@ -76,7 +79,7 @@ def test_extract_units_from_page_multiple_fields(page_with_multiple_fields_in_on
             max_length=100,
         ),
         Unit(
-            plugin_id=plugin.pk,
+            plugin_id=str(plugin.pk),
             plugin_type="TestMultipleFieldsPlugin",
             plugin_name="Test multiple fields plugin",
             field_name="lead",
@@ -88,7 +91,7 @@ def test_extract_units_from_page_multiple_fields(page_with_multiple_fields_in_on
         ),
     ]
 
-    assert extract_units_from_page(page, "en") == expected
+    assert extract_units_from_page(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -97,7 +100,7 @@ def test_extract_units_from_page_nested_plugin(page_with_one_nested_plugin):
 
     expected = [
         Unit(
-            plugin_id=parent_plugin.pk,
+            plugin_id=str(parent_plugin.pk),
             plugin_type="TestParentPlugin",
             plugin_name="Test parent plugin",
             field_name="body",
@@ -108,7 +111,7 @@ def test_extract_units_from_page_nested_plugin(page_with_one_nested_plugin):
             max_length=100,
         ),
         Unit(
-            plugin_id=child_plugin.pk,
+            plugin_id=str(child_plugin.pk),
             plugin_type="TestChildPlugin",
             plugin_name="Test child plugin",
             field_name="title",
@@ -120,7 +123,7 @@ def test_extract_units_from_page_nested_plugin(page_with_one_nested_plugin):
         ),
     ]
 
-    assert extract_units_from_page(page, "en") == expected
+    assert extract_units_from_page(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -129,7 +132,7 @@ def test_extract_units_form_page_multiple_placeholders_one_plugin(page_with_mult
 
     expected = [
         Unit(
-            plugin_id=main_plugin.pk,
+            plugin_id=str(main_plugin.pk),
             plugin_type="TestOneFieldPlugin",
             plugin_name="Test one field plugin",
             field_name="body",
@@ -140,7 +143,7 @@ def test_extract_units_form_page_multiple_placeholders_one_plugin(page_with_mult
             max_length=100,
         ),
         Unit(
-            plugin_id=second_plugin.pk,
+            plugin_id=str(second_plugin.pk),
             plugin_type="TestOneFieldPlugin",
             plugin_name="Test one field plugin",
             field_name="body",
@@ -152,7 +155,7 @@ def test_extract_units_form_page_multiple_placeholders_one_plugin(page_with_mult
         ),
     ]
 
-    assert extract_units_from_page(page, "en") == expected
+    assert extract_units_from_page(page, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -163,7 +166,7 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
 
     expected = [
         Unit(
-            plugin_id=main_plugin_1.pk,
+            plugin_id=str(main_plugin_1.pk),
             plugin_type="TestOneFieldPlugin",
             plugin_name="Test one field plugin",
             field_name="body",
@@ -174,7 +177,7 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
             max_length=100,
         ),
         Unit(
-            plugin_id=main_plugin_2.pk,
+            plugin_id=str(main_plugin_2.pk),
             plugin_type="TestMultipleFieldsPlugin",
             plugin_name="Test multiple fields plugin",
             field_name="title",
@@ -185,7 +188,7 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
             max_length=100,
         ),
         Unit(
-            plugin_id=main_plugin_2.pk,
+            plugin_id=str(main_plugin_2.pk),
             plugin_type="TestMultipleFieldsPlugin",
             plugin_name="Test multiple fields plugin",
             field_name="lead",
@@ -196,7 +199,7 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
             max_length=None,
         ),
         Unit(
-            plugin_id=second_plugin.pk,
+            plugin_id=str(second_plugin.pk),
             plugin_type="TestOneFieldPlugin",
             plugin_name="Test one field plugin",
             field_name="body",
@@ -208,4 +211,54 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
         ),
     ]
 
-    assert extract_units_from_page(page, "en") == expected
+    assert extract_units_from_page(page, "en", include_metadata=False) == expected
+
+
+@pytest.mark.django_db
+def test_extract_units_form_page_metadata(page_with_metadata):
+    language = "en"
+
+    page_unit = partial(
+        Unit,
+        plugin_id=UNIT_ID_METADATA_ID,
+        plugin_type=UNIT_ID_METADATA_ID,
+        plugin_name=UNIT_ID_METADATA_ID,
+        field_type="django.db.models.fields.CharField",
+    )
+    title_obj = page_with_metadata.get_title_obj(language=language)
+
+    expected = [
+        page_unit(field_name="title", source=title_obj.title, target="", field_verbose_name="Title", max_length=255),
+        page_unit(
+            field_type="django.db.models.fields.SlugField",
+            field_name="slug",
+            source=title_obj.slug,
+            target="",
+            field_verbose_name="Slug",
+            max_length=255,
+        ),
+        page_unit(
+            field_name="menu_title",
+            source=title_obj.menu_title,
+            target="",
+            field_verbose_name="Menu Title",
+            max_length=255,
+        ),
+        page_unit(
+            field_name="page_title",
+            source=title_obj.page_title,
+            target="",
+            field_verbose_name="Page Title",
+            max_length=255,
+        ),
+        page_unit(
+            field_type="django.db.models.fields.TextField",
+            field_name="meta_description",
+            source=title_obj.meta_description,
+            target="",
+            field_verbose_name="Description meta tag",
+            max_length=None,
+        ),
+    ]
+
+    assert extract_page_metadata(page_with_metadata, language) == expected

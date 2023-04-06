@@ -29,4 +29,4 @@ def test_get_draft_page_id_must_be_a_draft():
     public_page = page.get_public_object()
 
     with pytest.raises(XliffError):
-        get_draft_page(public_page.id)
+        get_draft_page(public_page.pk)

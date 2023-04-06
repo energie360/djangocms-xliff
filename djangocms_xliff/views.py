@@ -2,9 +2,8 @@ import json
 from dataclasses import asdict
 from typing import Type
 
-import requests
-from cms.admin.forms import ChangePageForm
-from cms.utils.urlutils import admin_reverse
+from cms.models import Page
+from django.contrib.admin import site
 from django.contrib.admin.views.decorators import staff_member_required
 from django.forms import Form
 from django.http import HttpResponse
@@ -163,32 +162,6 @@ class UploadView(XliffView):
 
 @method_decorator(staff_member_required, name="dispatch")
 class ImportView(XliffView):
-    @staticmethod
-    def trigger_cms_change_page(request, page_id, current_language):
-        """
-        This is a trick to trigger the cms, that we changed a page
-        It calls the admin api, the same way, as the "Change Page" Toolbar option
-        It basically just saves the page with the existing data
-        """
-        page = get_draft_page(page_id)
-        title_obj = page.get_title_obj(current_language)
-
-        fields = {field: getattr(title_obj, field, "") for field in ChangePageForm.translation_fields}
-        cms_admin_change_page_url = f'{admin_reverse("cms_page_change", args=[page_id])}?language={current_language}'
-        data = {
-            "csrfmiddlewaretoken": request.POST["csrfmiddlewaretoken"],
-            "language": current_language,
-            **fields,
-        }
-        headers = {"Referer": request.build_absolute_uri(request.get_full_path())}
-        response = requests.post(
-            url=request.build_absolute_uri(cms_admin_change_page_url),
-            data=data,
-            cookies=request.COOKIES,
-            headers=headers,
-        )
-        return HttpResponse(content=response.content)
-
     def post(self, request, page_id, current_language, *args, **kwargs):
         try:
             data = json.loads(request.POST["xliff_json"])
@@ -197,6 +170,7 @@ class ImportView(XliffView):
             xliff_context = XliffContext(**data, units=[Unit(**u) for u in units])
             save_xliff_context(xliff_context)
 
-            return self.trigger_cms_change_page(request, page_id, current_language)
+            admin = site._registry[Page]
+            return admin.response_change(request, xliff_context.page)
         except XliffError as e:
             return self.error_response(e)

@@ -6,7 +6,7 @@ from djangocms_xliff.types import Unit
 def test_create_xliff_version_1_2_simple(create_xliff_context):
     units = [
         Unit(
-            plugin_id=123,
+            plugin_id="123",
             plugin_type="TestPlugin",
             plugin_name="Test Plugin",
             field_name="title",

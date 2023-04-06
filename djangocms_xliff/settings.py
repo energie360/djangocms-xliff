@@ -11,6 +11,9 @@ class XliffVersion(Enum):
 
 XLIFF_NAMESPACES = {XliffVersion.V1_2: {"": "urn:oasis:names:tc:xliff:document:1.2"}}
 
+UNIT_ID_DELIMITER = "__"
+UNIT_ID_METADATA_ID = "METADATA"
+
 TEMPLATES_FOLDER = "djangocms_xliff"
 TEMPLATES_FOLDER_EXPORT = f"{TEMPLATES_FOLDER}/export"
 TEMPLATES_FOLDER_IMPORT = f"{TEMPLATES_FOLDER}/import"

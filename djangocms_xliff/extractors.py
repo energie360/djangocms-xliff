@@ -1,12 +1,18 @@
 import logging
+from functools import partial
 from typing import Generator, List
 
 from cms.models import CMSPlugin, Page, Placeholder, StaticPlaceholder
-from django.db.models import CharField, Field, TextField, URLField
+from django.db.models import CharField, Field, SlugField, TextField, URLField
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffExportError
-from djangocms_xliff.settings import FIELD_EXTRACTORS, FIELDS, VALIDATORS
+from djangocms_xliff.settings import (
+    FIELD_EXTRACTORS,
+    FIELDS,
+    UNIT_ID_METADATA_ID,
+    VALIDATORS,
+)
 from djangocms_xliff.types import Unit
 from djangocms_xliff.utils import get_type_with_path
 
@@ -14,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def has_translatable_type(field: Field) -> bool:
-    return type(field) in [CharField, TextField, URLField, *FIELDS]
+    return type(field) in [CharField, TextField, URLField, SlugField, *FIELDS]
 
 
 def is_not_cms_default(name: str) -> bool:
@@ -42,7 +48,7 @@ def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
         if not is_field_to_translate(field, instance):
             continue
 
-        source = getattr(instance, field.name)
+        source = getattr(instance, field.name, None)
         if not source:
             continue
 
@@ -52,7 +58,7 @@ def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
         else:
             units.append(
                 Unit(
-                    plugin_id=instance.id,
+                    plugin_id=str(instance.pk),
                     plugin_type=instance.plugin_type,
                     plugin_name=instance.get_plugin_name(),
                     field_name=field.name,
@@ -104,15 +110,62 @@ def get_declared_page_placeholders(page: Page) -> Generator[Placeholder, None, N
         yield StaticPlaceholder.objects.get(code=declared_static_placeholder).draft
 
 
-def extract_units_from_page(page: Page, language: str) -> List[Unit]:
+def extract_page_metadata(page: Page, language: str) -> List[Unit]:
+    metadata_fields = {
+        "title": _("Title"),
+        "slug": _("Slug"),
+        "menu_title": _("Menu Title"),
+        "page_title": _("Page Title"),
+        "meta_description": _("Description meta tag"),
+    }
+
+    page_unit = partial(
+        Unit, plugin_id=UNIT_ID_METADATA_ID, plugin_type=UNIT_ID_METADATA_ID, plugin_name=UNIT_ID_METADATA_ID
+    )
+
+    title = page.get_title_obj(language=language)
+
     units = []
+    for metadata_field, metadata_field_description in metadata_fields.items():
+        title_field = title._meta.get_field(metadata_field)
+
+        if not is_field_to_translate(title_field, title):
+            continue
+
+        title_field_name = title_field.name
+
+        source = getattr(title, title_field_name, None)
+        if not source:
+            continue
+
+        units.append(
+            page_unit(
+                field_name=title_field_name,
+                field_type=get_type_with_path(title_field),
+                field_verbose_name=metadata_field_description,
+                source=source,
+                max_length=title_field.max_length,
+            )
+        )
+
+    return units
+
+
+def extract_units_from_page(page: Page, language: str, include_metadata: bool = True) -> List[Unit]:
+    plugin_units = []
+
     for placeholder in get_declared_page_placeholders(page):
         logger.debug(
-            f"Placeholder: {placeholder.id}, is_static={placeholder.is_static}, "
+            f"Placeholder: {placeholder.pk}, is_static={placeholder.is_static}, "
             f"is_editable={placeholder.is_editable}, label={placeholder.get_label()}"
         )
-        units.extend(extract_units_from_placeholder(placeholder, language))
+        plugin_units.extend(extract_units_from_placeholder(placeholder, language))
 
-    if len(units) == 0:
+    if len(plugin_units) == 0:
         raise XliffExportError(_("No plugins found. You need to copy plugins from an existing page"))
-    return units
+
+    page_units = []
+    if include_metadata:
+        page_units.extend(extract_page_metadata(page, language))
+
+    return [*page_units, *plugin_units]
