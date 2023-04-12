@@ -2,14 +2,7 @@ import logging
 from functools import partial
 from typing import Generator, List, Tuple, Type
 
-from cms.models import (
-    CMSPlugin,
-    Page,
-    Placeholder,
-    PlaceholderField,
-    StaticPlaceholder,
-    Title,
-)
+from cms.models import CMSPlugin, Page, Placeholder, PlaceholderField, StaticPlaceholder
 from django.db.models import (
     CharField,
     Field,
@@ -152,7 +145,7 @@ def get_metadata_fields(obj: XliffObj) -> Tuple[XliffObj, dict]:
 
     if obj_type == Page:
         fields = TITLE_METADATA_FIELDS
-        target_obj: Title = obj.get_title_obj()
+        target_obj = obj.get_title_obj()
     else:
         fields = {f.name: f.verbose_name for f in obj._meta.fields}
         target_obj = obj

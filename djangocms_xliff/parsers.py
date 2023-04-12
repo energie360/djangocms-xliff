@@ -1,9 +1,11 @@
 import abc
 from html import unescape
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 from xml.etree import ElementTree as ET
 
+from cms.models import Page
 from defusedxml.ElementTree import parse
+from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffConfigurationError, XliffError
@@ -54,14 +56,21 @@ class Version12(VersionParser):
 
         return source_language, target_language, path
 
-    def parse_tool_element(self) -> Tuple[str, str]:
+    def parse_tool_element(self) -> Tuple[int, int]:
         tool_element = self.file_element.find("tool", namespaces=self.xml_namespaces)
         if tool_element is None:
             raise XliffError("XLIFF Error: Missing <tool> in <file>")
 
-        content_type_id, obj_id = tool_element.attrib["tool-id"].split(UNIT_ID_DELIMITER)
+        content_type_id: Union[str, int]
+        try:
+            content_type_id, obj_id = tool_element.attrib["tool-id"].split(UNIT_ID_DELIMITER)
+        except ValueError:
+            # For backwards compatibility, if there are existing xliff files
+            # with just the page_id as the tool-id
+            obj_id = tool_element.attrib["tool-id"]
+            content_type_id = ContentType.objects.get_for_model(Page).id
 
-        return content_type_id, obj_id
+        return int(content_type_id), int(obj_id)
 
     def parse_body_element(self):
         units = []
@@ -107,11 +116,12 @@ class Version12(VersionParser):
         source_language, target_language, path = self.parse_file_element()
         content_type_id, obj_id = self.parse_tool_element()
         units = self.parse_body_element()
+
         return XliffContext(
             source_language=source_language,
             target_language=target_language,
-            content_type_id=int(content_type_id),
-            obj_id=int(obj_id),
+            content_type_id=content_type_id,
+            obj_id=obj_id,
             path=path,
             units=units,
         )
