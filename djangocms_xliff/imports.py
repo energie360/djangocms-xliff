@@ -53,8 +53,6 @@ def save_xliff_context(xliff_context: XliffContext) -> None:
         if plugin_id == UNIT_ID_METADATA_ID:
             save_xliff_units_for_metadata(units, xliff_context.obj, xliff_context.target_language)
         else:
-            print(plugin_id)
-            print(units)
             save_xliff_units_for_cms_plugin(units, plugin_id)
 
 

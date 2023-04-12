@@ -212,7 +212,3 @@ def extract_units_from_obj(obj: XliffObj, language: str, include_metadata=True) 
         metadata_units.extend(extract_metadata_from_obj(obj, language))
 
     return [*metadata_units, *plugin_units]
-
-
-# TODO:
-# 1. Test if old import with main still works

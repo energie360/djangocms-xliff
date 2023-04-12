@@ -185,7 +185,7 @@ Add a toolbar for your own Django model:
 from cms.toolbar_pool import toolbar_pool
 from djangocms_xliff.cms_toolbars import XliffModelToolbar
 
-from news.models import Article
+from magazine.models import Article
 
 
 @toolbar_pool.register
@@ -194,6 +194,14 @@ class ArticleXliffToolbar(XliffModelToolbar):
 
 ```
 
+```python
+# By default all fields on a model get exported. You can exclude fields like this:
+DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS = {
+    'magazine.models.Article': {
+        'exclude': ["slug", "og_title", "og_description"]
+    }
+}
+```
 
 ## Contribute
 
