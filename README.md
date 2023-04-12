@@ -109,7 +109,7 @@ The translations are now imported, and you can publish the page.
 
 ## Settings
 
-By default, djangocms-xliff searches for the following django model fields: `CharField, TextField, URLField` in your
+By default, djangocms-xliff searches for the following django model fields: `CharField, SlugField, TextField, URLField` in your
 plugins.
 The texts from these fields will be used for the XLIFF import and export.
 

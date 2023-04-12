@@ -37,3 +37,9 @@ class TestChildModel(CMSPlugin):
 
 class TestModelStaticPlaceholder(Model):
     placeholder = OneToOneField(StaticPlaceholder, null=True, on_delete=PROTECT)
+
+
+class TestModelMetadata(Model):
+    title = models.CharField(max_length=100, verbose_name="Title")
+    slug = models.SlugField(verbose_name="Slug")
+    meta_description = models.TextField(verbose_name="Meta Description")

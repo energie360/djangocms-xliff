@@ -1,11 +1,11 @@
 import logging
 from typing import List
 
-from cms.models import CMSPlugin, Page, Title
+from cms.models import CMSPlugin, Page
+from django.utils import translation
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffImportError
-from djangocms_xliff.utils import get_lang_name, group_units_by_plugin_id
 from djangocms_xliff.settings import FIELD_IMPORTERS, UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit, XliffContext, XliffObj
 from djangocms_xliff.utils import get_lang_name
@@ -13,17 +13,21 @@ from djangocms_xliff.utils import get_lang_name
 logger = logging.getLogger(__name__)
 
 
-def save_xliff_units_for_page(units: List[Unit], target_title_obj: Title) -> None:
-    for unit in units:
-        field_name = unit.field_name
-        target = unit.target
+def save_xliff_units_for_metadata(units: List[Unit], obj: XliffObj, target_language: str) -> None:
+    with translation.override(target_language):
+        if type(obj) == Page:
+            obj = obj.get_title_obj()
 
-        setattr(target_title_obj, field_name, target)
+        for unit in units:
+            field_name = unit.field_name
+            target = unit.target
 
-    target_title_obj.save()
+            setattr(obj, field_name, target)
+
+        obj.save()
 
 
-def save_xliff_units_for_cms_plugins(units: List[Unit], plugin_id: str) -> None:
+def save_xliff_units_for_cms_plugin(units: List[Unit], plugin_id: str) -> None:
     try:
         cms_plugin = CMSPlugin.objects.get(pk=plugin_id)
     except CMSPlugin.DoesNotExist:
@@ -45,14 +49,13 @@ def save_xliff_units_for_cms_plugins(units: List[Unit], plugin_id: str) -> None:
 
 
 def save_xliff_context(xliff_context: XliffContext) -> None:
-    page = xliff_context.page
-    target_title_obj = page.get_title_obj(language=xliff_context.target_language)
-
     for plugin_id, units in xliff_context.grouped_units:
         if plugin_id == UNIT_ID_METADATA_ID:
-            save_xliff_units_for_page(units, target_title_obj)
+            save_xliff_units_for_metadata(units, xliff_context.obj, xliff_context.target_language)
         else:
-            save_xliff_units_for_cms_plugins(units, plugin_id)
+            print(plugin_id)
+            print(units)
+            save_xliff_units_for_cms_plugin(units, plugin_id)
 
 
 def validate_page_with_xliff_context(obj: XliffObj, xliff_context: XliffContext, current_language: str):

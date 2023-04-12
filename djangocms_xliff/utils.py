@@ -1,11 +1,11 @@
 from itertools import groupby
-from typing import List, Tuple, Type
+from typing import Dict, List, Tuple, Type
 
 from cms.models import Page
-from cms.utils.i18n import get_current_language, get_language_object
+from cms.utils.i18n import get_language_object
 from django.contrib.contenttypes.models import ContentType
+from django.utils import translation
 from django.utils.timezone import localtime, now
-from django.utils.translation import activate
 
 from djangocms_xliff.exceptions import XliffConfigurationError, XliffError
 from djangocms_xliff.settings import (
@@ -23,14 +23,14 @@ def get_xliff_version(version: str) -> XliffVersion:
         raise XliffConfigurationError(f'Unsupported xliff version: "{version}"')
 
 
-def get_xliff_namespaces(version: XliffVersion) -> dict:
+def get_xliff_namespaces(version: XliffVersion) -> Dict[str, str]:
     try:
         return XLIFF_NAMESPACES[version]
     except KeyError:
         raise XliffConfigurationError(f"Namespace for xliff version: {version.value} does not exist")
 
 
-def get_xliff_xml_namespaces(version: XliffVersion) -> dict:
+def get_xliff_xml_namespaces(version: XliffVersion) -> Dict[str, str]:
     xml_namespaces = {}
     for name, url in get_xliff_namespaces(version).items():
         xml_namespaces["xmlns" if name == "" else f"xmlns:{name}"] = url
@@ -60,11 +60,11 @@ def get_draft_page_by_id(page_id: int) -> Page:
 def get_draft_page(page: Page) -> Page:
     if page.publisher_is_draft:
         return page
-    else:
-        raise XliffError(
-            "Page is not a draft. You probably want to use a draft instead of a published page. "
-            f"Draft page id would be: {page.publisher_public.id}"
-        )
+
+    raise XliffError(
+        "Page is not a draft. You probably want to use a draft instead of a published page. "
+        f"Draft page id would be: {page.publisher_public.id}"
+    )
 
 
 def get_obj(content_type_id: int, obj_id: int) -> XliffObj:
@@ -74,22 +74,19 @@ def get_obj(content_type_id: int, obj_id: int) -> XliffObj:
 
     if model == Page:
         return get_draft_page_by_id(obj_id)
-    else:
-        try:
-            return model.objects.get(id=obj_id)
-        except model.DoesNotExist:
-            raise XliffError(f"{model._meta.verbose_name} with id: {obj_id} does not exist")
+
+    try:
+        return model.objects.get(id=obj_id)
+    except model.DoesNotExist:
+        raise XliffError(f"{model._meta.verbose_name} with id: {obj_id} does not exist")
 
 
-def get_path(obj: XliffObj, language: str):
+def get_path(obj: XliffObj, language: str) -> str:
     if type(obj) == Page:
-        path = obj.get_path(language)
-    else:
-        current_language = get_current_language()
-        activate(language)
-        path = obj.get_absolute_url()
-        activate(current_language)
-    return path
+        return obj.get_path(language)
+
+    with translation.override(language):
+        return obj.get_absolute_url()
 
 
 def group_units_by_plugin_id(units: List[Unit]) -> List[Tuple[str, List[Unit]]]:
@@ -103,3 +100,13 @@ def get_type_with_path(cls: Type) -> str:
 
 def get_lang_name(search_code: str) -> str:
     return get_language_object(search_code)["name"]
+
+
+def get_metadata_fields_for_model(obj: XliffObj) -> Dict[str, str]:
+    from djangocms_xliff.settings import MODEL_METADATA_FIELDS
+
+    obj_type = type(obj)
+    try:
+        return MODEL_METADATA_FIELDS[obj_type]
+    except KeyError:
+        raise XliffError(f"Can't find model {obj_type} in MODEL_METADATA_FIELDS config")

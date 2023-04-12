@@ -4,14 +4,15 @@ from typing import List
 import pytest
 
 from djangocms_xliff.extractors import (
-    extract_page_metadata,
+    extract_metadata_from_obj,
     extract_units_from_obj,
     extract_units_from_placeholder,
     extract_units_from_plugin,
     extract_units_from_plugin_instance,
 )
-from djangocms_xliff.settings import UNIT_ID_METADATA_ID
+from djangocms_xliff.settings import TITLE_METADATA_FIELDS, UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
+from djangocms_xliff.utils import get_type_with_path
 
 
 def page_with_one_field_expected_units() -> List[Unit]:
@@ -59,7 +60,7 @@ def test_extract_units_from_placeholder(page_with_one_field_in_plugin):
 def test_extract_units_from_page_one_field(page_with_one_field_in_plugin):
     page, _ = page_with_one_field_in_plugin()
 
-    assert extract_units_from_obj(page, "en") == page_with_one_field_expected_units()
+    assert extract_units_from_obj(page, "en", include_metadata=False) == page_with_one_field_expected_units()
 
 
 @pytest.mark.django_db
@@ -215,7 +216,14 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
 
 
 @pytest.mark.django_db
-def test_extract_units_form_page_metadata(page_with_metadata):
+def test_extract_units_from_model(model_with_static_placeholder):
+    test_model, _ = model_with_static_placeholder()
+
+    assert extract_units_from_obj(test_model, "en", include_metadata=False) == page_with_one_field_expected_units()
+
+
+@pytest.mark.django_db
+def test_extract_metadata_units_form_page(page_with_metadata):
     language = "en"
 
     page_unit = partial(
@@ -223,49 +231,49 @@ def test_extract_units_form_page_metadata(page_with_metadata):
         plugin_id=UNIT_ID_METADATA_ID,
         plugin_type=UNIT_ID_METADATA_ID,
         plugin_name=UNIT_ID_METADATA_ID,
-        field_type="django.db.models.fields.CharField",
     )
     title_obj = page_with_metadata.get_title_obj(language=language)
 
-    expected = [
-        page_unit(field_name="title", source=title_obj.title, target="", field_verbose_name="Title", max_length=255),
-        page_unit(
-            field_type="django.db.models.fields.SlugField",
-            field_name="slug",
-            source=title_obj.slug,
-            target="",
-            field_verbose_name="Slug",
-            max_length=255,
-        ),
-        page_unit(
-            field_name="menu_title",
-            source=title_obj.menu_title,
-            target="",
-            field_verbose_name="Menu Title",
-            max_length=255,
-        ),
-        page_unit(
-            field_name="page_title",
-            source=title_obj.page_title,
-            target="",
-            field_verbose_name="Page Title",
-            max_length=255,
-        ),
-        page_unit(
-            field_type="django.db.models.fields.TextField",
-            field_name="meta_description",
-            source=title_obj.meta_description,
-            target="",
-            field_verbose_name="Description meta tag",
-            max_length=None,
-        ),
-    ]
+    expected = []
+    for field_name, field_name_description in TITLE_METADATA_FIELDS.items():
+        field = title_obj._meta.get_field(field_name)
+        expected.append(
+            page_unit(
+                field_name=field_name,
+                source=field.value_from_object(title_obj),
+                target="",
+                field_verbose_name=field_name_description,
+                max_length=field.max_length,
+                field_type=get_type_with_path(field),
+            )
+        )
 
-    assert extract_page_metadata(page_with_metadata, language) == expected
+    assert extract_metadata_from_obj(page_with_metadata, language) == expected
 
 
 @pytest.mark.django_db
-def test_extract_units_from_model(model_with_static_placeholder):
-    test_model, _ = model_with_static_placeholder()
+def test_extract_metadata_units_from_model(monkeypatch, model_with_metadata):
+    model_unit = partial(
+        Unit,
+        plugin_id=UNIT_ID_METADATA_ID,
+        plugin_type=UNIT_ID_METADATA_ID,
+        plugin_name=UNIT_ID_METADATA_ID,
+    )
 
-    assert extract_units_from_obj(test_model, "en") == page_with_one_field_expected_units()
+    expected = []
+    for field in model_with_metadata._meta.fields:
+        if field.name in ["id"]:
+            continue
+
+        expected.append(
+            model_unit(
+                field_name=field.name,
+                source=field.value_from_object(model_with_metadata),
+                target="",
+                field_verbose_name=field.verbose_name,
+                max_length=field.max_length,
+                field_type=get_type_with_path(field),
+            )
+        )
+
+    assert extract_metadata_from_obj(model_with_metadata, "en") == expected

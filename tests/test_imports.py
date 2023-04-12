@@ -3,7 +3,7 @@ from typing import List
 
 import pytest
 from cms.api import create_page
-from cms.models import CMSPlugin
+from cms.models import CMSPlugin, Page
 
 from djangocms_xliff.exceptions import XliffImportError
 from djangocms_xliff.extractors import extract_units_from_obj
@@ -57,7 +57,7 @@ def test_page_and_context_cant_have_different_id(create_xliff_page_context):
     page = create_page("Test", "testing.html", "de")
     xliff_context = create_xliff_page_context([], obj_id=page.pk + 1)  # Make sure the ids are always different
 
-    assert page.pk != xliff_context.page_id
+    assert page.pk != xliff_context.obj_id
     with pytest.raises(XliffImportError):
         validate_page_with_xliff_context(page, xliff_context, "de")
 
@@ -87,7 +87,7 @@ def test_extract_and_save_xliff_context(
     page, main_plugin_1, main_plugin_2, second_plugin = page_with_multiple_placeholders_and_multiple_plugins()
 
     # Extract the xliff units from the page
-    units = extract_units_from_obj(page, language_to_translate)
+    units = extract_units_from_obj(page, language_to_translate, include_metadata=False)
     xliff_context = create_xliff_page_context(
         units,
         source_language="de",
@@ -120,7 +120,7 @@ def test_extract_and_save_xliff_context(
 
 
 @pytest.mark.django_db
-def test_save_page_with_metadata(page_with_metadata, create_xliff_context):
+def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
     language_to_translate = "de"
 
     # Translate units
@@ -179,18 +179,18 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_context):
         ),
     ]
 
-    xliff_context = create_xliff_context(
+    xliff_context = create_xliff_page_context(
         units,
         source_language="en",
         target_language=language_to_translate,
-        page_id=page_with_metadata.pk,
-        page_path=page_with_metadata.get_path(language_to_translate),
+        obj_id=page_with_metadata.pk,
+        path=page_with_metadata.get_path(language_to_translate),
     )
 
     # Import the units
     save_xliff_context(xliff_context)
 
-    updated_page = Page.objects.get(pk=xliff_context.page_id)
+    updated_page = Page.objects.get(pk=xliff_context.obj_id)
     updated_title_obj = updated_page.get_title_obj(language=language_to_translate)
 
     assert updated_title_obj.title == title_target_text

@@ -28,12 +28,12 @@ class Command(BaseCommand):
                     self.stdout.write(
                         self.style.SUCCESS(
                             f"Successfully imported {len(xliff_context.units)} units for "
-                            f"page with id: {xliff_context.page_id} "
+                            f"obj with id: {xliff_context.obj_id}, content_type_id: {xliff_context.content_type_id} "
                             f"and language: {xliff_context.target_language}"
                         )
                     )
                     self.stdout.write(
-                        f"Path to page: {xliff_context.page.get_absolute_url(xliff_context.target_language)}"
+                        f"Path to page: {xliff_context.obj.get_absolute_url(xliff_context.target_language)}"
                     )
                 else:
                     raise CommandError("Aborted.")

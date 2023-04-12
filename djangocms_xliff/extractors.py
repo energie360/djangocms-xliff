@@ -1,15 +1,33 @@
 import logging
-from typing import Generator, List, Type
 from functools import partial
+from typing import Generator, List, Tuple, Type
 
-from cms.models import CMSPlugin, Page, Placeholder, StaticPlaceholder, PlaceholderField
-from django.db.models import CharField, Field, SlugField, TextField, Model, URLField, OneToOneField
+from cms.models import (
+    CMSPlugin,
+    Page,
+    Placeholder,
+    PlaceholderField,
+    StaticPlaceholder,
+    Title,
+)
+from django.db.models import (
+    CharField,
+    Field,
+    Model,
+    OneToOneField,
+    SlugField,
+    TextField,
+    URLField,
+)
+from django.utils import translation
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffExportError
 from djangocms_xliff.settings import (
     FIELD_EXTRACTORS,
     FIELDS,
+    MODEL_METADATA_FIELDS,
+    TITLE_METADATA_FIELDS,
     UNIT_ID_METADATA_ID,
     VALIDATORS,
 )
@@ -48,7 +66,7 @@ def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
         if not is_field_to_translate(field, instance):
             continue
 
-        source = getattr(instance, field.name, None)
+        source = field.value_from_object(instance)
         if not source:
             continue
 
@@ -129,48 +147,61 @@ def get_placeholders(obj: XliffObj):
         return get_model_placeholders(obj)
 
 
-def extract_page_metadata(page: Page, language: str) -> List[Unit]:
-    metadata_fields = {
-        "title": _("Title"),
-        "slug": _("Slug"),
-        "menu_title": _("Menu Title"),
-        "page_title": _("Page Title"),
-        "meta_description": _("Description meta tag"),
-    }
+def get_metadata_fields(obj: XliffObj) -> Tuple[XliffObj, dict]:
+    obj_type = type(obj)
 
-    page_unit = partial(
-        Unit, plugin_id=UNIT_ID_METADATA_ID, plugin_type=UNIT_ID_METADATA_ID, plugin_name=UNIT_ID_METADATA_ID
-    )
+    if obj_type == Page:
+        fields = TITLE_METADATA_FIELDS
+        target_obj: Title = obj.get_title_obj()
+    else:
+        fields = {f.name: f.verbose_name for f in obj._meta.fields}
+        target_obj = obj
 
-    title = page.get_title_obj(language=language)
+    excluded_fields = MODEL_METADATA_FIELDS.get(obj_type, {}).get("exclude", [])
+    for excluded_field in excluded_fields:
+        fields.pop(excluded_field, None)
 
-    units = []
-    for metadata_field, metadata_field_description in metadata_fields.items():
-        title_field = title._meta.get_field(metadata_field)
+    return target_obj, fields
 
-        if not is_field_to_translate(title_field, title):
-            continue
 
-        title_field_name = title_field.name
+def extract_metadata_from_obj(obj: XliffObj, language: str) -> List[Unit]:
+    with translation.override(language):
+        target_obj, fields = get_metadata_fields(obj)
 
-        source = getattr(title, title_field_name, None)
-        if not source:
-            continue
-
-        units.append(
-            page_unit(
-                field_name=title_field_name,
-                field_type=get_type_with_path(title_field),
-                field_verbose_name=metadata_field_description,
-                source=source,
-                max_length=title_field.max_length,
-            )
+        model_unit = partial(
+            Unit, plugin_id=UNIT_ID_METADATA_ID, plugin_type=UNIT_ID_METADATA_ID, plugin_name=UNIT_ID_METADATA_ID
         )
 
-    return units
+        units = []
+        for field_name, field_verbose_name in fields.items():
+            target_obj_field = target_obj._meta.get_field(field_name)
+
+            if not is_field_to_translate(target_obj_field, target_obj):
+                continue
+
+            source = target_obj_field.value_from_object(target_obj)
+            if not source:
+                continue
+
+            target_obj_field_type = type(target_obj_field)
+            if target_obj_field_type in FIELD_EXTRACTORS:
+                units.extend(
+                    FIELD_EXTRACTORS[target_obj_field_type](instance=target_obj, field=target_obj_field, source=source)
+                )
+            else:
+                units.append(
+                    model_unit(
+                        field_name=target_obj_field.name,
+                        field_type=get_type_with_path(target_obj_field),
+                        field_verbose_name=field_verbose_name,
+                        source=target_obj_field.value_from_object(target_obj),
+                        max_length=target_obj_field.max_length,
+                    )
+                )
+        return units
 
 
-def extract_units_from_obj(obj: XliffObj, language: str, include_metadata = False) -> List[Unit]:
+def extract_units_from_obj(obj: XliffObj, language: str, include_metadata=True) -> List[Unit]:
     plugin_units = []
 
     for placeholder in get_placeholders(obj):
@@ -183,8 +214,12 @@ def extract_units_from_obj(obj: XliffObj, language: str, include_metadata = Fals
     if len(plugin_units) == 0:
         raise XliffExportError(_("No plugins found. You need to copy plugins from an existing page"))
 
-    page_units = []
+    metadata_units = []
     if include_metadata:
-        page_units.extend(extract_page_metadata(obj, language))
+        metadata_units.extend(extract_metadata_from_obj(obj, language))
 
-    return [*page_units, *plugin_units]
+    return [*metadata_units, *plugin_units]
+
+
+# TODO:
+# 1. Test if old import with main still works

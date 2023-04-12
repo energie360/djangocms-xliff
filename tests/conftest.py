@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 
 from djangocms_xliff.types import XliffContext
-from tests.models import TestModelStaticPlaceholder
+from tests.models import TestModelMetadata, TestModelStaticPlaceholder
 
 
 @pytest.fixture
@@ -181,11 +181,18 @@ def model_with_static_placeholder():
 
 
 @pytest.fixture
-def page_with_metadata(create_draft_page):
+def page_with_metadata(create_draft_page) -> Page:
     return create_draft_page(
         language="en",
         title="Title Test",
         menu_title="Menu Title Test",
         page_title="Page Title Test",
-        meta_description="Menu Description Test",
+        meta_description="Meta Description Test",
+    )
+
+
+@pytest.fixture
+def model_with_metadata() -> TestModelMetadata:
+    return TestModelMetadata.objects.create(
+        title="Title Test", slug="model-slug", meta_description="Meta Description for Model"
     )
