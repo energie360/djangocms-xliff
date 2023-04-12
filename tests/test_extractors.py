@@ -235,14 +235,14 @@ def test_extract_metadata_units_form_page(page_with_metadata):
     title_obj = page_with_metadata.get_title_obj(language=language)
 
     expected = []
-    for field_name, field_name_description in TITLE_METADATA_FIELDS.items():
+    for field_name, field_verbose_name in TITLE_METADATA_FIELDS.items():
         field = title_obj._meta.get_field(field_name)
         expected.append(
             page_unit(
                 field_name=field_name,
                 source=field.value_from_object(title_obj),
                 target="",
-                field_verbose_name=field_name_description,
+                field_verbose_name=field_verbose_name,
                 max_length=field.max_length,
                 field_type=get_type_with_path(field),
             )

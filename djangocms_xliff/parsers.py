@@ -25,8 +25,6 @@ class VersionParser(abc.ABC):
 
 
 class Version12(VersionParser):
-    version = XliffVersion.V1_2
-
     def __init__(self, xliff_element: ET.Element, xml_namespaces: dict):
         super().__init__(xliff_element, xml_namespaces)
 
