@@ -1,6 +1,7 @@
-#  type: ignore
-from cms.models import CMSPlugin
+# mypy: ignore-errors
+from cms.models import CMSPlugin, StaticPlaceholder
 from django.db import models
+from django.db.models import PROTECT, Model, OneToOneField
 
 
 class TestOneFieldModel(CMSPlugin):
@@ -32,3 +33,13 @@ class TestChildModel(CMSPlugin):
 
     class Meta:
         verbose_name = "Test Child Model"
+
+
+class TestModelStaticPlaceholder(Model):
+    placeholder = OneToOneField(StaticPlaceholder, null=True, on_delete=PROTECT)
+
+
+class TestModelMetadata(Model):
+    title = models.CharField(max_length=100, verbose_name="Title")
+    slug = models.SlugField(verbose_name="Slug")
+    meta_description = models.TextField(verbose_name="Meta Description")

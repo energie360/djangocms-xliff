@@ -2,6 +2,7 @@ from enum import Enum, unique
 
 from django.conf import settings
 from django.utils.module_loading import import_string
+from django.utils.translation import gettext_lazy as _
 
 
 @unique
@@ -33,3 +34,16 @@ FIELD_IMPORTERS = {
 VALIDATORS = [
     import_string(validator_callable) for validator_callable in getattr(settings, "DJANGOCMS_XLIFF_VALIDATORS", ())
 ]
+
+TITLE_METADATA_FIELDS = {
+    "title": _("Title"),
+    "slug": _("Slug"),
+    "menu_title": _("Menu Title"),
+    "page_title": _("Page Title"),
+    "meta_description": _("Description meta tag"),
+}
+
+MODEL_METADATA_FIELDS = {
+    import_string(model_class): config
+    for model_class, config in getattr(settings, "DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS", {}).items()
+}

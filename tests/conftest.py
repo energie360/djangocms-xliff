@@ -2,23 +2,27 @@ from typing import Tuple
 
 import pytest
 from cms.api import add_plugin, create_page
-from cms.models import CMSPlugin, Page
+from cms.models import CMSPlugin, Page, StaticPlaceholder
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Model
 
 from djangocms_xliff.types import XliffContext
+from tests.models import TestModelMetadata, TestModelStaticPlaceholder
 
 
 @pytest.fixture
-def create_xliff_context():
-    def _create_xliff_context(units, source_language="de", target_language="fr", page_id=1, page_path="/test"):
+def create_xliff_page_context():
+    def _create_xliff_page_context(units, source_language="de", target_language="fr", obj_id=1, path="/test"):
         return XliffContext(
             source_language=source_language,
             target_language=target_language,
-            page_id=page_id,
-            page_path=page_path,
+            content_type_id=ContentType.objects.get_for_model(Page).id,
+            obj_id=obj_id,
+            path=path,
             units=units,
         )
 
-    return _create_xliff_context
+    return _create_xliff_page_context
 
 
 @pytest.fixture
@@ -159,11 +163,36 @@ def page_with_multiple_placeholders_and_multiple_plugins(create_draft_page):
 
 
 @pytest.fixture
-def page_with_metadata(create_draft_page):
+def model_with_static_placeholder():
+    def _model_with_one_field_in_plugin() -> Tuple[Model, CMSPlugin]:
+        language = "en"
+
+        static_placeholder = StaticPlaceholder.objects.create(name="test", code="main")
+
+        plugin = add_plugin(
+            static_placeholder.draft, plugin_type="TestOneFieldPlugin", language=language, body="First plugin"
+        )
+
+        test_model = TestModelStaticPlaceholder.objects.create(placeholder=static_placeholder)
+
+        return test_model, plugin
+
+    return _model_with_one_field_in_plugin
+
+
+@pytest.fixture
+def page_with_metadata(create_draft_page) -> Page:
     return create_draft_page(
         language="en",
         title="Title Test",
         menu_title="Menu Title Test",
         page_title="Page Title Test",
-        meta_description="Menu Description Test",
+        meta_description="Meta Description Test",
+    )
+
+
+@pytest.fixture
+def model_with_metadata() -> TestModelMetadata:
+    return TestModelMetadata.objects.create(
+        title="Title Test", slug="model-slug", meta_description="Meta Description for Model"
     )

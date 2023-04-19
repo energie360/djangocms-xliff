@@ -109,7 +109,8 @@ The translations are now imported, and you can publish the page.
 
 ## Settings
 
-By default, djangocms-xliff searches for the following django model fields: `CharField, TextField, URLField` in your
+By default, djangocms-xliff searches for the following django model fields: `CharField, SlugField, TextField, URLField`
+in your
 plugins.
 The texts from these fields will be used for the XLIFF import and export.
 
@@ -175,6 +176,35 @@ DJANGOCMS_XLIFF_VALIDATORS = ("your_module.xliff.is_not_background",)
 def is_not_background(field: django.db.models.Field, instance: CMSPlugin) -> bool:
     # example:
     return field.name != "background"
+```
+
+## Placeholders Outside the CMS
+
+Add a toolbar for your own Django model:
+
+```python
+from cms.toolbar_pool import toolbar_pool
+from djangocms_xliff.cms_toolbars import XliffModelToolbar
+
+from magazine.models import Article
+
+
+@toolbar_pool.register
+class ArticleXliffToolbar(XliffModelToolbar):
+    pass
+
+```
+
+This package does not handle translatability at database level. There are various packages for that. We recommend the
+use of django-modeltranslation. Because this way import and export of XLIFF works out-of-the-box.
+
+```python
+# By default all fields on a model get exported. You can exclude fields like this:
+DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS = {
+    'magazine.models.Article': {
+        'exclude': ["slug", "og_title", "og_description"]
+    }
+}
 ```
 
 ## Contribute

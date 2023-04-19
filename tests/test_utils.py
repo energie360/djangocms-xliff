@@ -5,7 +5,7 @@ from cms.api import create_page
 
 from djangocms_xliff.exceptions import XliffError
 from djangocms_xliff.settings import XLIFF_NAMESPACES, XliffVersion
-from djangocms_xliff.utils import get_draft_page, get_xliff_xml_namespaces
+from djangocms_xliff.utils import get_draft_page_by_id, get_xliff_xml_namespaces
 
 
 def test_multiple_xliff_xml_namespaces():
@@ -29,4 +29,4 @@ def test_get_draft_page_id_must_be_a_draft():
     public_page = page.get_public_object()
 
     with pytest.raises(XliffError):
-        get_draft_page(public_page.pk)
+        get_draft_page_by_id(public_page.id)
