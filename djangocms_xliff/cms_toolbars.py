@@ -21,7 +21,7 @@ class XliffToolbar(CMSToolbar):
             self.update_language_menu(obj=obj)
 
     def get_object(self):
-        return self.toolbar.obj
+        return self.toolbar.obj or self.request.current_page
 
     def user_has_permissions(self, obj) -> bool:
         return False
@@ -55,6 +55,9 @@ class XliffToolbar(CMSToolbar):
 @toolbar_pool.register
 class XliffPageToolbar(XliffToolbar):
     def user_has_permissions(self, obj) -> bool:
+        if hasattr(obj, '_wrapped'):  # request.current_page returns a SimpleLazyObject
+            obj = obj._wrapped
+
         if obj and type(obj) == Page and len(obj.get_languages()) > 1:
             return page_permissions.user_can_change_page(user=self.request.user, page=obj, site=self.current_site)
         return False

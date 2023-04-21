@@ -6,9 +6,9 @@ from django.utils import translation
 from django.utils.translation import gettext as _
 
 from djangocms_xliff.exceptions import XliffImportError
-from djangocms_xliff.settings import FIELD_IMPORTERS, UNIT_ID_METADATA_ID
+from djangocms_xliff.settings import FIELD_IMPORTERS, UNIT_ID_METADATA_ID, UNIT_ID_EXTENSION_DATA_ID, UNIT_ID_DELIMITER
 from djangocms_xliff.types import Unit, XliffContext, XliffObj
-from djangocms_xliff.utils import get_lang_name
+from djangocms_xliff.utils import get_lang_name, get_obj
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,17 @@ def save_xliff_units_for_metadata(units: List[Unit], obj: XliffObj, target_langu
             setattr(obj, field_name, target)
 
         obj.save()
+
+
+def save_xliff_units_for_extension_data(units: List[Unit], target_language: str) -> None:
+    with translation.override(target_language):
+        for unit in units:
+            content_type_id, instance_id, field_name = unit.field_name.split(UNIT_ID_DELIMITER)
+            obj = get_obj(content_type_id, instance_id)
+
+            target = unit.target
+            setattr(obj, field_name, target)
+            obj.save()
 
 
 def save_xliff_units_for_cms_plugin(units: List[Unit], plugin_id: str) -> None:
@@ -52,6 +63,8 @@ def save_xliff_context(xliff_context: XliffContext) -> None:
     for plugin_id, units in xliff_context.grouped_units:
         if plugin_id == UNIT_ID_METADATA_ID:
             save_xliff_units_for_metadata(units, xliff_context.obj, xliff_context.target_language)
+        elif plugin_id.startswith(UNIT_ID_EXTENSION_DATA_ID):
+            save_xliff_units_for_extension_data(units, xliff_context.target_language)
         else:
             save_xliff_units_for_cms_plugin(units, plugin_id)
 

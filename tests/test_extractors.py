@@ -161,7 +161,7 @@ def test_extract_units_form_page_multiple_placeholders_one_plugin(page_with_mult
 
 @pytest.mark.django_db
 def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
-    page_with_multiple_placeholders_and_multiple_plugins,
+        page_with_multiple_placeholders_and_multiple_plugins,
 ):
     page, main_plugin_1, main_plugin_2, second_plugin = page_with_multiple_placeholders_and_multiple_plugins()
 
@@ -234,6 +234,14 @@ def test_extract_metadata_units_form_page(page_with_metadata):
     )
     title_obj = page_with_metadata.get_title_obj(language=language)
 
+    computed = extract_metadata_from_obj(
+        obj=page_with_metadata,
+        language=language,
+        plugin_name=UNIT_ID_METADATA_ID,
+        plugin_type=UNIT_ID_METADATA_ID,
+        plugin_id=UNIT_ID_METADATA_ID
+    )
+
     expected = []
     for field_name, field_verbose_name in TITLE_METADATA_FIELDS.items():
         field = title_obj._meta.get_field(field_name)
@@ -247,8 +255,7 @@ def test_extract_metadata_units_form_page(page_with_metadata):
                 field_type=get_type_with_path(field),
             )
         )
-
-    assert extract_metadata_from_obj(page_with_metadata, language) == expected
+    assert computed == expected
 
 
 @pytest.mark.django_db
@@ -258,6 +265,14 @@ def test_extract_metadata_units_from_model(monkeypatch, model_with_metadata):
         plugin_id=UNIT_ID_METADATA_ID,
         plugin_type=UNIT_ID_METADATA_ID,
         plugin_name=UNIT_ID_METADATA_ID,
+    )
+
+    computed = extract_metadata_from_obj(
+        obj=model_with_metadata,
+        language="en",
+        plugin_name=UNIT_ID_METADATA_ID,
+        plugin_type=UNIT_ID_METADATA_ID,
+        plugin_id=UNIT_ID_METADATA_ID
     )
 
     expected = []
@@ -276,4 +291,4 @@ def test_extract_metadata_units_from_model(monkeypatch, model_with_metadata):
             )
         )
 
-    assert extract_metadata_from_obj(model_with_metadata, "en") == expected
+    assert computed == expected
