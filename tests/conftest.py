@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 
 from djangocms_xliff.types import XliffContext
-from tests.models import TestModelMetadata, TestModelStaticPlaceholder
+from tests.models import TestModelMetadata, TestModelStaticPlaceholder, TestPageExtension, TestTitleExtension
 
 
 @pytest.fixture
@@ -189,6 +189,24 @@ def page_with_metadata(create_draft_page) -> Page:
         page_title="Page Title Test",
         meta_description="Meta Description Test",
     )
+
+
+@pytest.fixture
+def page_with_page_extension(create_draft_page) -> Page:
+    language = "en"
+
+    page = create_draft_page(language)
+    TestPageExtension.objects.create(title="Title Test", extended_object=page)
+    return page
+
+
+@pytest.fixture
+def page_with_title_extension(create_draft_page) -> Page:
+    language = "en"
+
+    page = create_draft_page(language)
+    TestTitleExtension.objects.create(title="Title Test", extended_object=page.get_title_obj(language))
+    return page
 
 
 @pytest.fixture

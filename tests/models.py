@@ -1,4 +1,5 @@
 # mypy: ignore-errors
+from cms.extensions import PageExtension, extension_pool, TitleExtension
 from cms.models import CMSPlugin, StaticPlaceholder
 from django.db import models
 from django.db.models import PROTECT, Model, OneToOneField
@@ -43,3 +44,17 @@ class TestModelMetadata(Model):
     title = models.CharField(max_length=100, verbose_name="Title")
     slug = models.SlugField(verbose_name="Slug")
     meta_description = models.TextField(verbose_name="Meta Description")
+
+
+class TestPageExtension(PageExtension):
+    title = models.CharField(max_length=100, verbose_name="Title")
+
+
+extension_pool.register(TestPageExtension)
+
+
+class TestTitleExtension(TitleExtension):
+    title = models.CharField(max_length=100, verbose_name="Title")
+
+
+extension_pool.register(TestTitleExtension)

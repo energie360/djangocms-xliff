@@ -8,11 +8,11 @@ from djangocms_xliff.extractors import (
     extract_units_from_obj,
     extract_units_from_placeholder,
     extract_units_from_plugin,
-    extract_units_from_plugin_instance,
+    extract_units_from_plugin_instance, extract_extension_data_from_page,
 )
 from djangocms_xliff.settings import TITLE_METADATA_FIELDS, UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
-from djangocms_xliff.utils import get_type_with_path
+from djangocms_xliff.utils import get_type_with_path, get_plugin_id_for_extension_obj
 
 
 def page_with_one_field_expected_units() -> List[Unit]:
@@ -284,6 +284,67 @@ def test_extract_metadata_units_from_model(monkeypatch, model_with_metadata):
             model_unit(
                 field_name=field.name,
                 source=field.value_from_object(model_with_metadata),
+                target="",
+                field_verbose_name=field.verbose_name,
+                max_length=field.max_length,
+                field_type=get_type_with_path(field),
+            )
+        )
+
+    assert computed == expected
+
+
+@pytest.mark.django_db
+def test_extract_units_from_page_extension(page_with_page_extension):
+    computed = extract_extension_data_from_page(obj=page_with_page_extension, language="en")
+
+    model_unit = partial(
+        Unit,
+        plugin_id=get_plugin_id_for_extension_obj(page_with_page_extension.testpageextension),
+        plugin_type=page_with_page_extension.testpageextension._meta.object_name,
+        plugin_name=page_with_page_extension.testpageextension._meta.verbose_name,
+    )
+
+    expected = []
+    for field in page_with_page_extension.testpageextension._meta.fields:
+        if field.name in ["id", "public_extension", "extended_object"]:
+            continue
+
+        expected.append(
+            model_unit(
+                field_name=field.name,
+                source=page_with_page_extension.testpageextension.title,
+                target="",
+                field_verbose_name=field.verbose_name,
+                max_length=field.max_length,
+                field_type=get_type_with_path(field),
+            )
+        )
+
+    assert computed == expected
+
+
+@pytest.mark.django_db
+def test_extract_units_from_title_extension(page_with_title_extension):
+    computed = extract_extension_data_from_page(obj=page_with_title_extension, language="en")
+
+    title = page_with_title_extension.get_title_obj(language="en")
+    model_unit = partial(
+        Unit,
+        plugin_id=get_plugin_id_for_extension_obj(title.testtitleextension),
+        plugin_type=title.testtitleextension._meta.object_name,
+        plugin_name=title.testtitleextension._meta.verbose_name,
+    )
+
+    expected = []
+    for field in title.testtitleextension._meta.fields:
+        if field.name in ["id", "public_extension", "extended_object"]:
+            continue
+
+        expected.append(
+            model_unit(
+                field_name=field.name,
+                source=title.testtitleextension.title,
                 target="",
                 field_verbose_name=field.verbose_name,
                 max_length=field.max_length,

@@ -5,7 +5,6 @@ from typing import Generator, List, Tuple, Type
 
 from cms.extensions import extension_pool
 from cms.models import CMSPlugin, Page, Placeholder, PlaceholderField, StaticPlaceholder
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import (
     CharField,
     Field,
@@ -24,13 +23,11 @@ from djangocms_xliff.settings import (
     FIELDS,
     MODEL_METADATA_FIELDS,
     TITLE_METADATA_FIELDS,
-    UNIT_ID_EXTENSION_DATA_ID,
-    UNIT_ID_DELIMITER,
     UNIT_ID_METADATA_ID,
     VALIDATORS,
 )
 from djangocms_xliff.types import Unit, XliffObj
-from djangocms_xliff.utils import get_type_with_path
+from djangocms_xliff.utils import get_type_with_path, get_plugin_id_for_extension_obj
 
 logger = logging.getLogger(__name__)
 
@@ -199,9 +196,7 @@ def extract_metadata_from_obj(obj: XliffObj, language: str, plugin_id: str, plug
 
 
 def extract_extension_data_from_obj(obj, language: str) -> List[Unit]:
-    content_type_id = ContentType.objects.get_for_model(obj).id
-    key = f'{UNIT_ID_EXTENSION_DATA_ID}_{content_type_id}'
-    plugin_id = UNIT_ID_DELIMITER.join([key, str(content_type_id), str(obj.id)])
+    plugin_id = get_plugin_id_for_extension_obj(obj)
     return extract_metadata_from_obj(
         obj=obj,
         language=language,
