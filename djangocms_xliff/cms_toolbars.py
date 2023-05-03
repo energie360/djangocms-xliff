@@ -58,7 +58,7 @@ class XliffPageToolbar(XliffToolbar):
         if hasattr(obj, "_wrapped"):  # request.current_page returns a SimpleLazyObject
             obj = obj._wrapped
 
-        if self.toolbar.edit_mode_active and type(obj) == Page and len(obj.get_languages()) > 1:
+        if self.toolbar.edit_mode_active and obj and type(obj) == Page and len(obj.get_languages()) > 1:
             return page_permissions.user_can_change_page(user=self.request.user, page=obj, site=self.current_site)
         return False
 
@@ -69,6 +69,6 @@ class XliffModelToolbar(XliffToolbar):
     """
 
     def user_has_permissions(self, obj) -> bool:
-        if obj and type(obj) != Page:
+        if self.toolbar.edit_mode_active and obj and type(obj) != Page:
             return self.request.user.has_perm(f"change_{obj._meta.model_name}")
         return False
