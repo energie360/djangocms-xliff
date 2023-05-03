@@ -4,15 +4,16 @@ from typing import List
 import pytest
 
 from djangocms_xliff.extractors import (
+    extract_extension_data_from_page,
     extract_metadata_from_obj,
     extract_units_from_obj,
     extract_units_from_placeholder,
     extract_units_from_plugin,
-    extract_units_from_plugin_instance, extract_extension_data_from_page,
+    extract_units_from_plugin_instance,
 )
 from djangocms_xliff.settings import TITLE_METADATA_FIELDS, UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
-from djangocms_xliff.utils import get_type_with_path, get_plugin_id_for_extension_obj
+from djangocms_xliff.utils import get_plugin_id_for_extension_obj, get_type_with_path
 
 
 def page_with_one_field_expected_units() -> List[Unit]:
@@ -161,7 +162,7 @@ def test_extract_units_form_page_multiple_placeholders_one_plugin(page_with_mult
 
 @pytest.mark.django_db
 def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
-        page_with_multiple_placeholders_and_multiple_plugins,
+    page_with_multiple_placeholders_and_multiple_plugins,
 ):
     page, main_plugin_1, main_plugin_2, second_plugin = page_with_multiple_placeholders_and_multiple_plugins()
 
@@ -239,7 +240,7 @@ def test_extract_metadata_units_form_page(page_with_metadata):
         language=language,
         plugin_name=UNIT_ID_METADATA_ID,
         plugin_type=UNIT_ID_METADATA_ID,
-        plugin_id=UNIT_ID_METADATA_ID
+        plugin_id=UNIT_ID_METADATA_ID,
     )
 
     expected = []
@@ -272,7 +273,7 @@ def test_extract_metadata_units_from_model(monkeypatch, model_with_metadata):
         language="en",
         plugin_name=UNIT_ID_METADATA_ID,
         plugin_type=UNIT_ID_METADATA_ID,
-        plugin_id=UNIT_ID_METADATA_ID
+        plugin_id=UNIT_ID_METADATA_ID,
     )
 
     expected = []

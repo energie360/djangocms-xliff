@@ -7,7 +7,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 
 from djangocms_xliff.types import XliffContext
-from tests.models import TestModelMetadata, TestModelStaticPlaceholder, TestPageExtension, TestTitleExtension
+from tests.models import (
+    TestModelMetadata,
+    TestModelStaticPlaceholder,
+    TestPageExtension,
+    TestTitleExtension,
+)
 
 
 @pytest.fixture

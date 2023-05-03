@@ -116,5 +116,4 @@ def get_metadata_fields_for_model(obj: XliffObj) -> Dict[str, str]:
 
 def get_plugin_id_for_extension_obj(obj) -> str:
     content_type_id = ContentType.objects.get_for_model(obj).id
-    key = f'{UNIT_ID_EXTENSION_DATA_ID}_{content_type_id}'
-    return UNIT_ID_DELIMITER.join([key, str(content_type_id), str(obj.id)])
+    return UNIT_ID_DELIMITER.join([UNIT_ID_EXTENSION_DATA_ID, str(content_type_id), str(obj.id)])

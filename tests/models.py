@@ -1,5 +1,5 @@
 # mypy: ignore-errors
-from cms.extensions import PageExtension, extension_pool, TitleExtension
+from cms.extensions import PageExtension, TitleExtension, extension_pool
 from cms.models import CMSPlugin, StaticPlaceholder
 from django.db import models
 from django.db.models import PROTECT, Model, OneToOneField

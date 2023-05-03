@@ -27,7 +27,7 @@ from djangocms_xliff.settings import (
     VALIDATORS,
 )
 from djangocms_xliff.types import Unit, XliffObj
-from djangocms_xliff.utils import get_type_with_path, get_plugin_id_for_extension_obj
+from djangocms_xliff.utils import get_plugin_id_for_extension_obj, get_type_with_path
 
 logger = logging.getLogger(__name__)
 
@@ -159,8 +159,9 @@ def get_metadata_fields(obj: XliffObj) -> Tuple[XliffObj, dict]:
     return target_obj, fields
 
 
-def extract_metadata_from_obj(obj: XliffObj, language: str, plugin_id: str, plugin_type: str, plugin_name: str) -> List[
-    Unit]:
+def extract_metadata_from_obj(
+    obj: XliffObj, language: str, plugin_id: str, plugin_type: str, plugin_name: str
+) -> List[Unit]:
     with translation.override(language):
         target_obj, fields = get_metadata_fields(obj)
 
@@ -202,7 +203,7 @@ def extract_extension_data_from_obj(obj, language: str) -> List[Unit]:
         language=language,
         plugin_id=plugin_id,
         plugin_type=obj._meta.object_name,
-        plugin_name=obj._meta.verbose_name
+        plugin_name=obj._meta.verbose_name,
     )
 
 
@@ -211,8 +212,9 @@ def extract_extension_data_from_page(obj: XliffObj, language: str) -> List[Unit]
         units = []
         for title_extension_class in extension_pool.title_extensions:
             with suppress(title_extension_class.DoesNotExist):
-                instance = title_extension_class.objects.get(extended_object__page=obj,
-                                                             extended_object__language=language)
+                instance = title_extension_class.objects.get(
+                    extended_object__page=obj, extended_object__language=language
+                )
                 units.extend(extract_extension_data_from_obj(obj=instance, language=language))
 
         # In rare cases it makes sense to use translated fields on page extensions
@@ -245,7 +247,7 @@ def extract_units_from_obj(obj: XliffObj, language: str, include_metadata=True) 
                 language=language,
                 plugin_id=UNIT_ID_METADATA_ID,
                 plugin_type=UNIT_ID_METADATA_ID,
-                plugin_name=UNIT_ID_METADATA_ID
+                plugin_name=UNIT_ID_METADATA_ID,
             )
         )
 
