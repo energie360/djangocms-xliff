@@ -52,8 +52,8 @@ class ExportView(XliffView):
         if not form.is_valid():
             return self.render_template(form, current_language)
 
-        obj = get_obj(content_type_id, obj_id)
         try:
+            obj = get_obj(content_type_id, obj_id)
             xliff_str, file_name = export_content_as_xliff(
                 obj=obj,
                 source_language=form.cleaned_data["source_language"],

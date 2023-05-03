@@ -4,6 +4,7 @@ from typing import List
 import pytest
 
 from djangocms_xliff.extractors import (
+    extract_extension_data_from_page,
     extract_metadata_from_obj,
     extract_units_from_obj,
     extract_units_from_placeholder,
@@ -12,7 +13,7 @@ from djangocms_xliff.extractors import (
 )
 from djangocms_xliff.settings import TITLE_METADATA_FIELDS, UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
-from djangocms_xliff.utils import get_type_with_path
+from djangocms_xliff.utils import get_plugin_id_for_extension_obj, get_type_with_path
 
 
 def page_with_one_field_expected_units() -> List[Unit]:
@@ -234,6 +235,14 @@ def test_extract_metadata_units_form_page(page_with_metadata):
     )
     title_obj = page_with_metadata.get_title_obj(language=language)
 
+    computed = extract_metadata_from_obj(
+        obj=page_with_metadata,
+        language=language,
+        plugin_name=UNIT_ID_METADATA_ID,
+        plugin_type=UNIT_ID_METADATA_ID,
+        plugin_id=UNIT_ID_METADATA_ID,
+    )
+
     expected = []
     for field_name, field_verbose_name in TITLE_METADATA_FIELDS.items():
         field = title_obj._meta.get_field(field_name)
@@ -247,8 +256,7 @@ def test_extract_metadata_units_form_page(page_with_metadata):
                 field_type=get_type_with_path(field),
             )
         )
-
-    assert extract_metadata_from_obj(page_with_metadata, language) == expected
+    assert computed == expected
 
 
 @pytest.mark.django_db
@@ -258,6 +266,14 @@ def test_extract_metadata_units_from_model(monkeypatch, model_with_metadata):
         plugin_id=UNIT_ID_METADATA_ID,
         plugin_type=UNIT_ID_METADATA_ID,
         plugin_name=UNIT_ID_METADATA_ID,
+    )
+
+    computed = extract_metadata_from_obj(
+        obj=model_with_metadata,
+        language="en",
+        plugin_name=UNIT_ID_METADATA_ID,
+        plugin_type=UNIT_ID_METADATA_ID,
+        plugin_id=UNIT_ID_METADATA_ID,
     )
 
     expected = []
@@ -276,4 +292,65 @@ def test_extract_metadata_units_from_model(monkeypatch, model_with_metadata):
             )
         )
 
-    assert extract_metadata_from_obj(model_with_metadata, "en") == expected
+    assert computed == expected
+
+
+@pytest.mark.django_db
+def test_extract_units_from_page_extension(page_with_page_extension):
+    computed = extract_extension_data_from_page(obj=page_with_page_extension, language="en")
+
+    model_unit = partial(
+        Unit,
+        plugin_id=get_plugin_id_for_extension_obj(page_with_page_extension.testpageextension),
+        plugin_type=page_with_page_extension.testpageextension._meta.object_name,
+        plugin_name=page_with_page_extension.testpageextension._meta.verbose_name,
+    )
+
+    expected = []
+    for field in page_with_page_extension.testpageextension._meta.fields:
+        if field.name in ["id", "public_extension", "extended_object"]:
+            continue
+
+        expected.append(
+            model_unit(
+                field_name=field.name,
+                source=page_with_page_extension.testpageextension.title,
+                target="",
+                field_verbose_name=field.verbose_name,
+                max_length=field.max_length,
+                field_type=get_type_with_path(field),
+            )
+        )
+
+    assert computed == expected
+
+
+@pytest.mark.django_db
+def test_extract_units_from_title_extension(page_with_title_extension):
+    computed = extract_extension_data_from_page(obj=page_with_title_extension, language="en")
+
+    title = page_with_title_extension.get_title_obj(language="en")
+    model_unit = partial(
+        Unit,
+        plugin_id=get_plugin_id_for_extension_obj(title.testtitleextension),
+        plugin_type=title.testtitleextension._meta.object_name,
+        plugin_name=title.testtitleextension._meta.verbose_name,
+    )
+
+    expected = []
+    for field in title.testtitleextension._meta.fields:
+        if field.name in ["id", "public_extension", "extended_object"]:
+            continue
+
+        expected.append(
+            model_unit(
+                field_name=field.name,
+                source=title.testtitleextension.title,
+                target="",
+                field_verbose_name=field.verbose_name,
+                max_length=field.max_length,
+                field_type=get_type_with_path(field),
+            )
+        )
+
+    assert computed == expected

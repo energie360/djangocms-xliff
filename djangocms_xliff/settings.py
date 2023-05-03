@@ -14,6 +14,7 @@ XLIFF_NAMESPACES = {XliffVersion.V1_2: {"": "urn:oasis:names:tc:xliff:document:1
 
 UNIT_ID_DELIMITER = "__"
 UNIT_ID_METADATA_ID = "METADATA"
+UNIT_ID_EXTENSION_DATA_ID = "EXTENSION"
 
 TEMPLATES_FOLDER = "djangocms_xliff"
 TEMPLATES_FOLDER_EXPORT = f"{TEMPLATES_FOLDER}/export"

@@ -10,6 +10,8 @@ from django.utils.timezone import localtime, now
 from djangocms_xliff.exceptions import XliffConfigurationError, XliffError
 from djangocms_xliff.settings import (
     TEMPLATES_FOLDER_EXPORT,
+    UNIT_ID_DELIMITER,
+    UNIT_ID_EXTENSION_DATA_ID,
     XLIFF_NAMESPACES,
     XliffVersion,
 )
@@ -110,3 +112,8 @@ def get_metadata_fields_for_model(obj: XliffObj) -> Dict[str, str]:
         return MODEL_METADATA_FIELDS[obj_type]
     except KeyError:
         raise XliffError(f"Can't find model {obj_type} in MODEL_METADATA_FIELDS config")
+
+
+def get_plugin_id_for_extension_obj(obj) -> str:
+    content_type_id = ContentType.objects.get_for_model(obj).id
+    return UNIT_ID_DELIMITER.join([UNIT_ID_EXTENSION_DATA_ID, str(content_type_id), str(obj.id)])
