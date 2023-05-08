@@ -70,5 +70,5 @@ class XliffModelToolbar(XliffToolbar):
 
     def user_has_permissions(self, obj) -> bool:
         if self.toolbar.edit_mode_active and obj and type(obj) != Page:
-            return self.request.user.has_perm(f"change_{obj._meta.model_name}")
+            return self.request.user.has_perm(f"{obj._meta.app_label}.change_{obj._meta.model_name}")
         return False
