@@ -41,7 +41,7 @@ def is_not_cms_default(name: str) -> bool:
 
 
 def has_no_choices(field: Field) -> bool:
-    return field.choices is None
+    return getattr(field, "choices", None) is None
 
 
 def is_field_to_translate(field: Field, instance: CMSPlugin) -> bool:
@@ -57,11 +57,11 @@ def is_field_to_translate(field: Field, instance: CMSPlugin) -> bool:
 def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
     units = []
 
-    for field in instance._meta.fields:
+    for field in instance._meta.get_fields():
         if not is_field_to_translate(field, instance):
             continue
 
-        source = field.value_from_object(instance)
+        source = getattr(instance, field.name, None)
         if not source:
             continue
 
