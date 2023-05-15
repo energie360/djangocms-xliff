@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.2] - 2023-05-15
+
+* Make checks for plugin fields more flexible
+
 ## [1.3.1] - 2023-05-08
 
 * Fix permission check in toolbar
