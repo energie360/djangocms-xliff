@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, TypeVar, Union
+from typing import Any, List, Optional, Tuple, TypeVar, Union
 
 from cms.models import Page, Title
 from django.db.models import Model
@@ -62,7 +62,7 @@ class XliffContext:
     source_language: str
     target_language: str
     content_type_id: int
-    obj_id: int
+    obj_id: Any
     path: str
     units: List[Unit]
 
@@ -83,3 +83,8 @@ class XliffContext:
         from djangocms_xliff.settings import UNIT_ID_DELIMITER
 
         return f"{self.content_type_id}{UNIT_ID_DELIMITER}{self.obj_id}"
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "XliffContext":
+        units = data.pop("units", [])
+        return cls(**data, units=[Unit(**u) for u in units])
