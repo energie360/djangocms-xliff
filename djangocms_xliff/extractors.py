@@ -23,7 +23,6 @@ from djangocms_xliff.settings import (
     FIELDS,
     MODEL_METADATA_FIELDS,
     TITLE_METADATA_FIELDS,
-    UNIT_ID_METADATA_ID,
     VALIDATORS,
 )
 from djangocms_xliff.types import Unit, XliffObj
@@ -259,8 +258,8 @@ def extract_units_from_obj(
                 obj=obj,
                 language=language,
                 plugin_id=get_plugin_id_for_metadata_obj(obj),
-                plugin_type=UNIT_ID_METADATA_ID,
-                plugin_name=UNIT_ID_METADATA_ID,
+                plugin_type=obj._meta.object_name,
+                plugin_name=obj._meta.verbose_name,
             )
         )
 
