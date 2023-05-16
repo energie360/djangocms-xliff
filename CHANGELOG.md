@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.3] - 2023-05-16
+
+* Make function more flexible to use in external code
+
 ## [1.3.2] - 2023-05-15
 
 * Make checks for plugin fields more flexible
