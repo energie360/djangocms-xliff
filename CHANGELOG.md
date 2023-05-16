@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.3.4] - 2023-05-16
+
+* Fix page import not working
+* Make xliff plugin_name and plugin_id more readable
+
 ## [1.3.3] - 2023-05-16
 
 * Make function more flexible to use in external code
