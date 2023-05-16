@@ -22,7 +22,7 @@ from djangocms_xliff.settings import (
     TEMPLATES_FOLDER_EXPORT,
     TEMPLATES_FOLDER_IMPORT,
 )
-from djangocms_xliff.types import Unit, XliffContext
+from djangocms_xliff.types import XliffContext
 from djangocms_xliff.utils import get_lang_name, get_obj
 
 
@@ -166,9 +166,7 @@ class ImportView(XliffView):
     def post(self, request, content_type_id: int, obj_id: int, *args, **kwargs):
         try:
             data = json.loads(request.POST["xliff_json"])
-            units = data.pop("units", [])
-
-            xliff_context = XliffContext(**data, units=[Unit(**u) for u in units])
+            xliff_context = XliffContext.from_dict(data)
             save_xliff_context(xliff_context)
 
             # Determine the HttpResponse for the change_view stage.

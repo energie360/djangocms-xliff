@@ -27,7 +27,11 @@ from djangocms_xliff.settings import (
     VALIDATORS,
 )
 from djangocms_xliff.types import Unit, XliffObj
-from djangocms_xliff.utils import get_plugin_id_for_extension_obj, get_type_with_path
+from djangocms_xliff.utils import (
+    get_plugin_id_for_extension_obj,
+    get_plugin_id_for_metadata_obj,
+    get_type_with_path,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -129,9 +133,16 @@ def get_model_placeholders(obj: Type[Model]):
         field_type = type(field)
 
         if field_type == PlaceholderField or (field_type == OneToOneField and field.related_model == StaticPlaceholder):
-            placeholder = getattr(obj, field.name)
-            if placeholder:
-                placeholders.append(placeholder.draft)
+            placeholder = getattr(obj, field.name, None)
+            if not placeholder:
+                continue
+
+            draft = getattr(placeholder, "draft", None)
+            if draft:
+                placeholders.append(draft)
+            else:
+                placeholders.append(placeholder)
+
     return placeholders
 
 
@@ -226,7 +237,9 @@ def extract_extension_data_from_page(obj: XliffObj, language: str) -> List[Unit]
         return units
 
 
-def extract_units_from_obj(obj: XliffObj, language: str, include_metadata=True) -> List[Unit]:
+def extract_units_from_obj(
+    obj: XliffObj, language: str, include_metadata=True, allow_empty_plugins=False
+) -> List[Unit]:
     plugin_units = []
 
     for placeholder in get_placeholders(obj):
@@ -236,7 +249,7 @@ def extract_units_from_obj(obj: XliffObj, language: str, include_metadata=True) 
         )
         plugin_units.extend(extract_units_from_placeholder(placeholder, language))
 
-    if len(plugin_units) == 0:
+    if not allow_empty_plugins and len(plugin_units) == 0:
         raise XliffExportError(_("No plugins found. You need to copy plugins from an existing page"))
 
     metadata_units = []
@@ -245,7 +258,7 @@ def extract_units_from_obj(obj: XliffObj, language: str, include_metadata=True) 
             extract_metadata_from_obj(
                 obj=obj,
                 language=language,
-                plugin_id=UNIT_ID_METADATA_ID,
+                plugin_id=get_plugin_id_for_metadata_obj(obj),
                 plugin_type=UNIT_ID_METADATA_ID,
                 plugin_name=UNIT_ID_METADATA_ID,
             )

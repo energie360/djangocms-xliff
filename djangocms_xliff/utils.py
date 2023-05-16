@@ -1,5 +1,5 @@
 from itertools import groupby
-from typing import Dict, List, Tuple, Type
+from typing import Any, Dict, List, Tuple, Type
 
 from cms.models import Page
 from cms.utils.i18n import get_language_object
@@ -12,6 +12,7 @@ from djangocms_xliff.settings import (
     TEMPLATES_FOLDER_EXPORT,
     UNIT_ID_DELIMITER,
     UNIT_ID_EXTENSION_DATA_ID,
+    UNIT_ID_METADATA_ID,
     XLIFF_NAMESPACES,
     XliffVersion,
 )
@@ -69,7 +70,7 @@ def get_draft_page(page: Page) -> Page:
     )
 
 
-def get_obj(content_type_id: int, obj_id: int) -> XliffObj:
+def get_obj(content_type_id: int, obj_id: Any) -> XliffObj:
     model = ContentType.objects.get_for_id(content_type_id).model_class()
     if not model:
         raise XliffError(f"ContentType Lookup for content_type_id {content_type_id} with obj_id {obj_id} failed")
@@ -117,3 +118,8 @@ def get_metadata_fields_for_model(obj: XliffObj) -> Dict[str, str]:
 def get_plugin_id_for_extension_obj(obj) -> str:
     content_type_id = ContentType.objects.get_for_model(obj).id
     return UNIT_ID_DELIMITER.join([UNIT_ID_EXTENSION_DATA_ID, str(content_type_id), str(obj.id)])
+
+
+def get_plugin_id_for_metadata_obj(obj) -> str:
+    content_type_id = ContentType.objects.get_for_model(obj).id
+    return UNIT_ID_DELIMITER.join([UNIT_ID_METADATA_ID, str(content_type_id), str(obj.id)])
