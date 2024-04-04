@@ -30,7 +30,7 @@ def save_xliff_units_for_metadata(units: List[Unit], target_language: str, lazy_
                 obj = lazy_xliff_obj()
 
             if type(obj) == Page:
-                obj = obj.get_title_obj()
+                obj = obj.get_title_obj(language=target_language)
 
             target = unit.target
             setattr(obj, field_name, target)
