@@ -2,7 +2,9 @@ import json
 from dataclasses import asdict
 from typing import Type
 
-from django.contrib.admin import site
+from cms.admin.pageadmin import PageAdmin
+from cms.models import Page
+from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.forms import Form
 from django.http import HttpResponse
@@ -171,7 +173,28 @@ class ImportView(XliffView):
 
             # Determine the HttpResponse for the change_view stage.
             obj = get_obj(content_type_id, obj_id)
-            admin = site._registry[obj._meta.model]
-            return admin.response_change(request, obj)
+
+            if type(obj) == Page:
+                title_obj = obj.get_title_obj(xliff_context.target_language)
+                page_metadata = {
+                    "language": xliff_context.target_language,
+                    "title": title_obj.title,
+                    "slug": title_obj.slug,
+                    "menu_title": title_obj.menu_title,
+                    "page_title": title_obj.page_title,
+                    "meta_description": title_obj.meta_description,
+                    "_save": "save",
+                }
+                updated_request_post = request.POST.copy()
+                updated_request_post.pop("xliff_json", None)
+                updated_request_post.update(page_metadata)
+
+                request.POST = updated_request_post
+
+                page_admin = PageAdmin(Page, admin.site)
+                return page_admin.change_view(request, str(obj.pk))
+
+            model_admin = admin.site._registry[obj._meta.model]
+            return model_admin.response_change(request, obj)
         except XliffError as e:
             return self.error_response(e)
