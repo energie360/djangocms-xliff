@@ -23,7 +23,7 @@ def test_create_xliff_version_1_2_simple(create_xliff_page_context):
 
     xliff_context = create_xliff_page_context(units)
 
-    content_type_id = ContentType.objects.get_for_model(Page).id
+    content_type_id = ContentType.objects.get_for_model(Page).pk
 
     expected = f"""<?xml version="1.0" encoding="utf-8" standalone="no"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">

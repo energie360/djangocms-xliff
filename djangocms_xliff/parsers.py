@@ -66,7 +66,7 @@ class Version12(VersionParser):
             # For backwards compatibility, if there are existing xliff files
             # with just the page_id as the tool-id
             obj_id = tool_element.attrib["tool-id"]
-            content_type_id = ContentType.objects.get_for_model(Page).id
+            content_type_id = ContentType.objects.get_for_model(Page).pk
 
         return int(content_type_id), int(obj_id)
 

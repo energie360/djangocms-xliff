@@ -31,12 +31,12 @@ class XliffToolbar(CMSToolbar):
         if not language_menu:
             return None
 
-        content_type_id = ContentType.objects.get_for_model(obj.__class__).id
+        content_type_id = ContentType.objects.get_for_model(obj.__class__).pk
         reverse_xliff = partial(
             reverse,
             kwargs={
                 "content_type_id": content_type_id,
-                "obj_id": obj.id,
+                "obj_id": obj.pk,
                 "current_language": self.current_lang,
             },
         )
