@@ -16,7 +16,7 @@ def convert_obj_to_xliff_context(obj: XliffObj, source_language: str, target_lan
         source_language=source_language,
         target_language=target_language,
         content_type_id=content_type_id,
-        obj_id=obj.id,
+        obj_id=obj.pk,
         path=get_path(obj=obj, language=target_language),
         units=extract_units_from_obj(obj, target_language),
     )

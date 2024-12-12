@@ -21,7 +21,7 @@ def create_xliff_page_context():
         return XliffContext(
             source_language=source_language,
             target_language=target_language,
-            content_type_id=ContentType.objects.get_for_model(Page).id,
+            content_type_id=ContentType.objects.get_for_model(Page).pk,
             obj_id=obj_id,
             path=path,
             units=units,

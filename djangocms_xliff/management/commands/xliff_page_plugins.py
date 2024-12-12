@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Found {len(units)} xliff units on page with id: {obj.id} and language: {current_language}"
+                    f"Found {len(units)} xliff units on page with id: {obj.pk} and language: {current_language}"
                 )
             )
             self.stdout.write()

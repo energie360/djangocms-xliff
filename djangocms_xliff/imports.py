@@ -80,7 +80,7 @@ def save_xliff_context(xliff_context: XliffContext) -> None:
 
 
 def validate_page_with_xliff_context(obj: XliffObj, xliff_context: XliffContext, current_language: str):
-    obj_id = obj.id
+    obj_id = obj.pk
     xliff_obj_id = xliff_context.obj_id
     if obj_id != xliff_obj_id:
         error_message = _('Selected page id: "%(obj_id)s" is not the same as xliff page id: "%(xliff_obj_id)s"')
