@@ -79,7 +79,7 @@ def get_obj(content_type_id: int, obj_id: Any) -> XliffObj:
         return get_draft_page_by_id(obj_id)
 
     try:
-        return model.objects.get(id=obj_id)
+        return model.objects.get(pk=obj_id)
     except model.DoesNotExist:
         raise XliffError(f"{model._meta.verbose_name} with id: {obj_id} does not exist")
 
