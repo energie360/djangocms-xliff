@@ -48,3 +48,6 @@ MODEL_METADATA_FIELDS = {
     import_string(model_class): config
     for model_class, config in getattr(settings, "DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS", {}).items()
 }
+
+ALIAS_CONTENT_PATH = getattr(settings, "DJANGOCMS_XLIFF_ALIAS_CONTENT_PATH", "")
+get_alias_content_path = import_string(ALIAS_CONTENT_PATH) if ALIAS_CONTENT_PATH else None

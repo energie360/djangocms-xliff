@@ -14,6 +14,7 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views import View
 
+from djangocms_xliff.compat import IS_CMS_V4_PLUS
 from djangocms_xliff.exceptions import XliffError
 from djangocms_xliff.exports import export_content_as_xliff
 from djangocms_xliff.forms import ExportForm, UploadFileForm
@@ -175,7 +176,10 @@ class ImportView(XliffView):
             obj = get_obj(content_type_id, obj_id)
 
             if type(obj) == Page:
-                title_obj = obj.get_title_obj(xliff_context.target_language)
+                if IS_CMS_V4_PLUS:
+                    title_obj = obj.get_content_obj(xliff_context.target_language)
+                else:
+                    title_obj = obj.get_title_obj(xliff_context.target_language)
                 page_metadata = {
                     "language": xliff_context.target_language,
                     "title": title_obj.title,

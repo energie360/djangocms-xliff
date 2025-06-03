@@ -4,7 +4,8 @@ from functools import partial
 from typing import Generator, List, Tuple, Type
 
 from cms.extensions import extension_pool
-from cms.models import CMSPlugin, Page, Placeholder, PlaceholderField, StaticPlaceholder
+from cms.models import CMSPlugin, Page, Placeholder, StaticPlaceholder
+from cms.utils.placeholder import get_declared_placeholders_for_obj
 from django.db.models import (
     CharField,
     Field,
@@ -17,6 +18,7 @@ from django.db.models import (
 from django.utils import translation
 from django.utils.translation import gettext as _
 
+from djangocms_xliff.compat import IS_ALIAS_INSTALLED, IS_CMS_V4_PLUS
 from djangocms_xliff.exceptions import XliffExportError
 from djangocms_xliff.settings import (
     FIELD_EXTRACTORS,
@@ -31,6 +33,22 @@ from djangocms_xliff.utils import (
     get_plugin_id_for_metadata_obj,
     get_type_with_path,
 )
+
+if IS_CMS_V4_PLUS:
+    from cms.models import PageContent, PlaceholderRelationField
+
+    PlaceholderField = None
+else:
+    from cms.models import PlaceholderField
+
+    PageContent = PlaceholderRelationField = None
+
+
+if IS_ALIAS_INSTALLED:
+    from djangocms_alias.models import AliasContent
+else:
+    AliasContent = None
+
 
 logger = logging.getLogger(__name__)
 
@@ -106,13 +124,35 @@ def extract_units_from_plugin(cms_plugin: CMSPlugin) -> List[Unit]:
 
 def extract_units_from_placeholder(placeholder: Placeholder, language: str) -> List[Unit]:
     units = []
-    for cms_plugin in placeholder.get_child_plugins(language).order_by("position"):
+
+    if IS_CMS_V4_PLUS:
+        cms_plugins = placeholder.get_plugins(language).order_by("position")
+    else:
+        cms_plugins = placeholder.get_child_plugins(language).order_by("position")
+    for cms_plugin in cms_plugins:
         logger.debug(f"Plugin: {cms_plugin.pk}, type={cms_plugin.plugin_type}")
         units += extract_units_from_plugin(cms_plugin)
     return units
 
 
+def get_page_content_placeholders(page_content: PageContent) -> Generator[Placeholder, None, None]:
+    declared_placeholders_slots = [pl.slot for pl in get_declared_placeholders_for_obj(page_content)]
+    logger.debug(f"Declared placeholders in page: {declared_placeholders_slots}")
+
+    for declared_placeholders_slot in declared_placeholders_slots:
+        yield page_content.placeholders.get(slot=declared_placeholders_slot)
+
+
+def get_alias_placeholders(alias_content: AliasContent) -> Generator[Placeholder, None, None]:
+    declared_placeholders_slots = [pl.slot for pl in get_declared_placeholders_for_obj(alias_content)]
+    logger.debug(f"Alias placeholders in page: {declared_placeholders_slots}")
+
+    for declared_placeholders_slot in declared_placeholders_slots:
+        yield alias_content.placeholders.get(slot=declared_placeholders_slot)
+
+
 def get_declared_page_placeholders(page: Page) -> Generator[Placeholder, None, None]:
+    """This function supports CMS versions lower than 4."""
     declared_placeholders_slots = [pl.slot for pl in page.get_declared_placeholders()]
     logger.debug(f"Declared placeholders in page: {declared_placeholders_slots}")
 
@@ -131,7 +171,9 @@ def get_model_placeholders(obj: Type[Model]):
     for field in obj._meta.fields:
         field_type = type(field)
 
-        if field_type == PlaceholderField or (field_type == OneToOneField and field.related_model == StaticPlaceholder):
+        if field_type in [PlaceholderField, PlaceholderRelationField] or (
+            field_type == OneToOneField and field.related_model == StaticPlaceholder
+        ):
             placeholder = getattr(obj, field.name, None)
             if not placeholder:
                 continue
@@ -146,7 +188,11 @@ def get_model_placeholders(obj: Type[Model]):
 
 
 def get_placeholders(obj: XliffObj):
-    if type(obj) == Page:
+    if type(obj) is PageContent:
+        return get_page_content_placeholders(obj)
+    elif type(obj) is AliasContent:
+        return get_alias_placeholders(obj)
+    elif type(obj) is Page:
         return get_declared_page_placeholders(obj)
     else:
         return get_model_placeholders(obj)
@@ -157,7 +203,10 @@ def get_metadata_fields(obj: XliffObj) -> Tuple[XliffObj, dict]:
 
     if obj_type == Page:
         fields = TITLE_METADATA_FIELDS
-        target_obj = obj.get_title_obj()
+        if IS_CMS_V4_PLUS:
+            target_obj = obj.get_content_obj()
+        else:
+            target_obj = obj.get_title_obj()
     else:
         fields = {f.name: f.verbose_name for f in obj._meta.fields}
         target_obj = obj

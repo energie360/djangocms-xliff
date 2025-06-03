@@ -5,6 +5,7 @@ from cms.models import CMSPlugin, Page
 from django.utils import translation
 from django.utils.translation import gettext as _
 
+from djangocms_xliff.compat import IS_CMS_V4_PLUS
 from djangocms_xliff.exceptions import XliffImportError
 from djangocms_xliff.settings import (
     FIELD_IMPORTERS,
@@ -30,7 +31,10 @@ def save_xliff_units_for_metadata(units: List[Unit], target_language: str, lazy_
                 obj = lazy_xliff_obj()
 
             if type(obj) == Page:
-                obj = obj.get_title_obj(language=target_language)
+                if IS_CMS_V4_PLUS:
+                    obj = obj.get_content_obj(language=target_language)
+                else:
+                    obj = obj.get_title_obj(language=target_language)
 
             target = unit.target
             setattr(obj, field_name, target)
