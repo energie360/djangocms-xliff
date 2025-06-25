@@ -5,7 +5,6 @@ from typing import Generator, List, Tuple, Type
 
 from cms.extensions import extension_pool
 from cms.models import CMSPlugin, Page, Placeholder, StaticPlaceholder
-from cms.utils.placeholder import get_declared_placeholders_for_obj
 from django.db.models import (
     CharField,
     Field,
@@ -36,12 +35,13 @@ from djangocms_xliff.utils import (
 
 if IS_CMS_V4_PLUS:
     from cms.models import PageContent, PlaceholderRelationField
+    from cms.utils.placeholder import get_declared_placeholders_for_obj
 
     PlaceholderField = None
 else:
     from cms.models import PlaceholderField
 
-    PageContent = PlaceholderRelationField = None
+    PageContent = PlaceholderRelationField = get_declared_placeholders_for_obj = None
 
 
 if IS_ALIAS_INSTALLED:
