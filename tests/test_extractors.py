@@ -3,6 +3,7 @@ from typing import List
 
 import pytest
 
+from djangocms_xliff.compat import IS_CMS_V4_PLUS
 from djangocms_xliff.extractors import (
     extract_extension_data_from_page,
     extract_metadata_from_obj,
@@ -11,9 +12,15 @@ from djangocms_xliff.extractors import (
     extract_units_from_plugin,
     extract_units_from_plugin_instance,
 )
-from djangocms_xliff.settings import TITLE_METADATA_FIELDS, UNIT_ID_METADATA_ID
+from djangocms_xliff.settings import PAGE_CONTENT_METADATA_FIELDS, TITLE_METADATA_FIELDS, UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
 from djangocms_xliff.utils import get_plugin_id_for_extension_obj, get_type_with_path
+from tests.conftest import get_page_placeholder
+
+if IS_CMS_V4_PLUS:
+    from cms.models import PageContent
+else:
+    PageContent = None
 
 
 def page_with_one_field_expected_units() -> List[Unit]:
@@ -52,7 +59,7 @@ def test_extract_units_from_plugin(page_with_one_field_in_plugin):
 def test_extract_units_from_placeholder(page_with_one_field_in_plugin):
     page, test_plugin = page_with_one_field_in_plugin()
 
-    placeholder = page.placeholders.get(slot="main")
+    placeholder = get_page_placeholder(page=page, slot="main", language="en")
 
     assert extract_units_from_placeholder(placeholder, "en") == page_with_one_field_expected_units()
 
@@ -60,8 +67,9 @@ def test_extract_units_from_placeholder(page_with_one_field_in_plugin):
 @pytest.mark.django_db
 def test_extract_units_from_page_one_field(page_with_one_field_in_plugin):
     page, _ = page_with_one_field_in_plugin()
+    obj = PageContent.admin_manager.get(page=page, language="en") if IS_CMS_V4_PLUS else page
 
-    assert extract_units_from_obj(page, "en", include_metadata=False) == page_with_one_field_expected_units()
+    assert extract_units_from_obj(obj, "en", include_metadata=False) == page_with_one_field_expected_units()
 
 
 @pytest.mark.django_db
@@ -93,7 +101,9 @@ def test_extract_units_from_page_multiple_fields(page_with_multiple_fields_in_on
         ),
     ]
 
-    assert extract_units_from_obj(page, "en", include_metadata=False) == expected
+    obj = PageContent.admin_manager.get(page=page, language="en") if IS_CMS_V4_PLUS else page
+
+    assert extract_units_from_obj(obj, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -125,7 +135,9 @@ def test_extract_units_from_page_nested_plugin(page_with_one_nested_plugin):
         ),
     ]
 
-    assert extract_units_from_obj(page, "en", include_metadata=False) == expected
+    obj = PageContent.admin_manager.get(page=page, language="en") if IS_CMS_V4_PLUS else page
+
+    assert extract_units_from_obj(obj, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -157,7 +169,9 @@ def test_extract_units_form_page_multiple_placeholders_one_plugin(page_with_mult
         ),
     ]
 
-    assert extract_units_from_obj(page, "en", include_metadata=False) == expected
+    obj = PageContent.admin_manager.get(page=page, language="en") if IS_CMS_V4_PLUS else page
+
+    assert extract_units_from_obj(obj, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -213,7 +227,9 @@ def test_extract_units_form_page_multiple_placeholders_multiple_plugins(
         ),
     ]
 
-    assert extract_units_from_obj(page, "en", include_metadata=False) == expected
+    obj = PageContent.admin_manager.get(page=page, language="en") if IS_CMS_V4_PLUS else page
+
+    assert extract_units_from_obj(obj, "en", include_metadata=False) == expected
 
 
 @pytest.mark.django_db
@@ -233,7 +249,10 @@ def test_extract_metadata_units_form_page(page_with_metadata):
         plugin_type=UNIT_ID_METADATA_ID,
         plugin_name=UNIT_ID_METADATA_ID,
     )
-    title_obj = page_with_metadata.get_title_obj(language=language)
+    if IS_CMS_V4_PLUS:
+        title_obj = page_with_metadata.get_content_obj(language=language)
+    else:
+        title_obj = page_with_metadata.get_title_obj(language=language)
 
     computed = extract_metadata_from_obj(
         obj=page_with_metadata,
@@ -244,7 +263,8 @@ def test_extract_metadata_units_form_page(page_with_metadata):
     )
 
     expected = []
-    for field_name, field_verbose_name in TITLE_METADATA_FIELDS.items():
+    fields = PAGE_CONTENT_METADATA_FIELDS if IS_CMS_V4_PLUS else TITLE_METADATA_FIELDS
+    for field_name, field_verbose_name in fields.items():
         field = title_obj._meta.get_field(field_name)
         expected.append(
             page_unit(
@@ -329,7 +349,11 @@ def test_extract_units_from_page_extension(page_with_page_extension):
 def test_extract_units_from_title_extension(page_with_title_extension):
     computed = extract_extension_data_from_page(obj=page_with_title_extension, language="en")
 
-    title = page_with_title_extension.get_title_obj(language="en")
+    if IS_CMS_V4_PLUS:
+        title = page_with_title_extension.get_content_obj(language="en")
+    else:
+        title = page_with_title_extension.get_title_obj(language="en")
+
     model_unit = partial(
         Unit,
         plugin_id=get_plugin_id_for_extension_obj(title.testtitleextension),

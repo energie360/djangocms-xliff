@@ -33,6 +33,12 @@ else:
     AliasContent = None
 
 
+if IS_CMS_V4_PLUS:
+    CMSContentType = type[PageContent | AliasContent] if IS_CMS_V4_PLUS else type[PageContent]
+else:
+    CMSContentType = None
+
+
 def get_xliff_version(version: str) -> XliffVersion:
     try:
         return XliffVersion(version)
@@ -77,7 +83,7 @@ def get_draft_page_by_id(page_id: int) -> Page:
         raise XliffError(f"Page with id: {page_id} does not exist")
 
 
-def get_versioning_obj_by_id(model: type[PageContent | AliasContent], obj_id: int) -> Page:
+def get_versioning_obj_by_id(model: CMSContentType, obj_id: int) -> Page:
     try:
         return model.admin_manager.get(id=obj_id)
     except PageContent.DoesNotExist:
@@ -85,7 +91,7 @@ def get_versioning_obj_by_id(model: type[PageContent | AliasContent], obj_id: in
 
 
 def get_draft_page(page: Page) -> Page:
-    if page.publisher_is_draft:
+    if getattr(page, "publisher_is_draft", False) or IS_CMS_V4_PLUS:
         return page
 
     raise XliffError(

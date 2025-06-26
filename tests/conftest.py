@@ -6,6 +6,7 @@ from cms.models import CMSPlugin, Page, StaticPlaceholder
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 
+from djangocms_xliff.compat import IS_CMS_V4_PLUS
 from djangocms_xliff.types import XliffContext
 from tests.models import (
     TestModelMetadata,
@@ -13,6 +14,13 @@ from tests.models import (
     TestPageExtension,
     TestTitleExtension,
 )
+
+
+def get_page_placeholder(page: Page, slot: str, language: str):
+    if IS_CMS_V4_PLUS:
+        return page.get_placeholders(language).get(slot=slot)
+    else:
+        return page.placeholders.get(slot=slot)
 
 
 @pytest.fixture
@@ -56,7 +64,7 @@ def page_with_one_field_in_plugin(create_draft_page):
         language = "en"
 
         page = create_draft_page(language)
-        placeholder = page.placeholders.get(slot="main")
+        placeholder = get_page_placeholder(page=page, slot="main", language=language)
 
         plugin = add_plugin(placeholder, plugin_type="TestOneFieldPlugin", language=language, body="First plugin")
         return page, plugin
@@ -70,7 +78,7 @@ def page_with_multiple_fields_in_one_plugin(create_draft_page):
         language = "en"
 
         page = create_draft_page(language)
-        placeholder = page.placeholders.get(slot="main")
+        placeholder = get_page_placeholder(page=page, slot="main", language=language)
 
         plugin = add_plugin(
             placeholder,
@@ -92,7 +100,7 @@ def page_with_one_nested_plugin(create_draft_page):
         language = "en"
 
         page = create_draft_page(language)
-        placeholder = page.placeholders.get(slot="main")
+        placeholder = get_page_placeholder(page=page, slot="main", language=language)
 
         parent_plugin = add_plugin(
             placeholder,
@@ -114,8 +122,8 @@ def page_with_multiple_placeholders_and_one_plugin(create_draft_page):
         language = "en"
 
         page = create_draft_page(language)
-        main_placeholder = page.placeholders.get(slot="main")
-        second_placeholder = page.placeholders.get(slot="second")
+        main_placeholder = get_page_placeholder(page=page, slot="main", language=language)
+        second_placeholder = get_page_placeholder(page=page, slot="second", language=language)
 
         main_plugin = add_plugin(
             main_placeholder, plugin_type="TestOneFieldPlugin", language=language, body="Plugin in main placeholder"
@@ -136,7 +144,7 @@ def page_with_multiple_placeholders_and_multiple_plugins(create_draft_page):
         language = "en"
 
         page = create_draft_page(language)
-        main_placeholder = page.placeholders.get(slot="main")
+        main_placeholder = get_page_placeholder(page=page, slot="main", language=language)
 
         main_plugin_1 = add_plugin(
             main_placeholder,
@@ -154,7 +162,7 @@ def page_with_multiple_placeholders_and_multiple_plugins(create_draft_page):
             is_good=False,
         )
 
-        second_placeholder = page.placeholders.get(slot="second")
+        second_placeholder = get_page_placeholder(page=page, slot="second", language=language)
         second_plugin = add_plugin(
             second_placeholder,
             plugin_type="TestOneFieldPlugin",
@@ -187,13 +195,15 @@ def model_with_static_placeholder():
 
 @pytest.fixture
 def page_with_metadata(create_draft_page) -> Page:
-    return create_draft_page(
-        language="en",
-        title="Title Test",
-        menu_title="Menu Title Test",
-        page_title="Page Title Test",
-        meta_description="Meta Description Test",
-    )
+    page_kwargs = {
+        "language": "en",
+        "title": "Title Test",
+        "menu_title": "Menu Title Test",
+        "meta_description": "Meta Description Test",
+    }
+    if not IS_CMS_V4_PLUS:
+        page_kwargs["page_title"] = "Page Title Test"
+    return create_draft_page(**page_kwargs)
 
 
 @pytest.fixture
@@ -210,7 +220,8 @@ def page_with_title_extension(create_draft_page) -> Page:
     language = "en"
 
     page = create_draft_page(language)
-    TestTitleExtension.objects.create(title="Title Test", extended_object=page.get_title_obj(language))
+    extended_object = page.get_content_obj(language) if IS_CMS_V4_PLUS else page.get_title_obj(language)
+    TestTitleExtension.objects.create(title="Title Test", extended_object=extended_object)
     return page
 
 

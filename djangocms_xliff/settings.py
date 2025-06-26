@@ -36,6 +36,12 @@ VALIDATORS = [
     import_string(validator_callable) for validator_callable in getattr(settings, "DJANGOCMS_XLIFF_VALIDATORS", ())
 ]
 
+PAGE_CONTENT_METADATA_FIELDS = {
+    "title": _("Title"),
+    "menu_title": _("Menu Title"),
+    "meta_description": _("Description meta tag"),
+}
+
 TITLE_METADATA_FIELDS = {
     "title": _("Title"),
     "slug": _("Slug"),

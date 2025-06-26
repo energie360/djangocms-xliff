@@ -1,10 +1,10 @@
 from importlib.metadata import PackageNotFoundError, version
+from packaging.version import parse
 
-from pkg_resources import parse_version
 
 try:
     cms_version = version("django-cms")
-    IS_CMS_V4_PLUS = parse_version(cms_version) >= parse_version("4.0.0")
+    IS_CMS_V4_PLUS = parse(cms_version) >= parse("4.0.0")
 except PackageNotFoundError:
     IS_CMS_V4_PLUS = False
 

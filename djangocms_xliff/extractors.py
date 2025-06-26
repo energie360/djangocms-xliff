@@ -23,6 +23,7 @@ from djangocms_xliff.settings import (
     FIELD_EXTRACTORS,
     FIELDS,
     MODEL_METADATA_FIELDS,
+    PAGE_CONTENT_METADATA_FIELDS,
     TITLE_METADATA_FIELDS,
     VALIDATORS,
 )
@@ -126,7 +127,7 @@ def extract_units_from_placeholder(placeholder: Placeholder, language: str) -> L
     units = []
 
     if IS_CMS_V4_PLUS:
-        cms_plugins = placeholder.get_plugins(language).order_by("position")
+        cms_plugins = placeholder.get_plugins(language).filter(parent__isnull=True).order_by("position")
     else:
         cms_plugins = placeholder.get_child_plugins(language).order_by("position")
     for cms_plugin in cms_plugins:
@@ -153,17 +154,18 @@ def get_alias_placeholders(alias_content: AliasContent) -> Generator[Placeholder
 
 def get_declared_page_placeholders(page: Page) -> Generator[Placeholder, None, None]:
     """This function supports CMS versions lower than 4."""
-    declared_placeholders_slots = [pl.slot for pl in page.get_declared_placeholders()]
-    logger.debug(f"Declared placeholders in page: {declared_placeholders_slots}")
+    if not IS_CMS_V4_PLUS:
+        declared_placeholders_slots = [pl.slot for pl in page.get_declared_placeholders()]
+        logger.debug(f"Declared placeholders in page: {declared_placeholders_slots}")
 
-    declared_static_placeholders = [pl.slot for pl in page.get_declared_static_placeholders({})]
-    logger.debug(f"Static placeholders in page: {declared_static_placeholders}")
+        declared_static_placeholders = [pl.slot for pl in page.get_declared_static_placeholders({})]
+        logger.debug(f"Static placeholders in page: {declared_static_placeholders}")
 
-    for declared_placeholders_slot in declared_placeholders_slots:
-        yield page.placeholders.get(slot=declared_placeholders_slot)
+        for declared_placeholders_slot in declared_placeholders_slots:
+            yield page.placeholders.get(slot=declared_placeholders_slot)
 
-    for declared_static_placeholder in declared_static_placeholders:
-        yield StaticPlaceholder.objects.get(code=declared_static_placeholder).draft
+        for declared_static_placeholder in declared_static_placeholders:
+            yield StaticPlaceholder.objects.get(code=declared_static_placeholder).draft
 
 
 def get_model_placeholders(obj: Type[Model]):
@@ -202,11 +204,12 @@ def get_metadata_fields(obj: XliffObj) -> Tuple[XliffObj, dict]:
     obj_type = type(obj)
 
     if obj_type == Page:
-        fields = TITLE_METADATA_FIELDS
         if IS_CMS_V4_PLUS:
             target_obj = obj.get_content_obj()
+            fields = PAGE_CONTENT_METADATA_FIELDS
         else:
             target_obj = obj.get_title_obj()
+            fields = TITLE_METADATA_FIELDS
     else:
         fields = {f.name: f.verbose_name for f in obj._meta.fields}
         target_obj = obj
@@ -269,7 +272,8 @@ def extract_extension_data_from_obj(obj, language: str) -> List[Unit]:
 def extract_extension_data_from_page(obj: XliffObj, language: str) -> List[Unit]:
     with translation.override(language):
         units = []
-        for title_extension_class in extension_pool.title_extensions:
+        title_extensions = extension_pool.page_content_extensions if IS_CMS_V4_PLUS else extension_pool.title_extensions
+        for title_extension_class in title_extensions:
             with suppress(title_extension_class.DoesNotExist):
                 instance = title_extension_class.objects.get(
                     extended_object__page=obj, extended_object__language=language

@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pytest
 from cms.api import create_page
 
+from djangocms_xliff.compat import IS_CMS_V4_PLUS
 from djangocms_xliff.exceptions import XliffError
 from djangocms_xliff.settings import XLIFF_NAMESPACES, XliffVersion
 from djangocms_xliff.utils import get_draft_page_by_id, get_xliff_xml_namespaces
@@ -23,10 +24,11 @@ def test_multiple_xliff_xml_namespaces():
         assert get_xliff_xml_namespaces(version) == expected
 
 
-@pytest.mark.django_db
-def test_get_draft_page_id_must_be_a_draft():
-    page = create_page("Test", "testing.html", "de", published=True)
-    public_page = page.get_public_object()
+if not IS_CMS_V4_PLUS:
+    @pytest.mark.django_db
+    def test_get_draft_page_id_must_be_a_draft():
+        page = create_page("Test", "testing.html", "de", published=True)
+        public_page = page.get_public_object()
 
-    with pytest.raises(XliffError):
-        get_draft_page_by_id(public_page.id)
+        with pytest.raises(XliffError):
+            get_draft_page_by_id(public_page.id)

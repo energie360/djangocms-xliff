@@ -185,10 +185,11 @@ class ImportView(XliffView):
                     "title": title_obj.title,
                     "slug": title_obj.slug,
                     "menu_title": title_obj.menu_title,
-                    "page_title": title_obj.page_title,
                     "meta_description": title_obj.meta_description,
                     "_save": "save",
                 }
+                if not IS_CMS_V4_PLUS:
+                    page_metadata["page_title"] = title_obj.page_title
                 updated_request_post = request.POST.copy()
                 updated_request_post.pop("xliff_json", None)
                 updated_request_post.update(page_metadata)

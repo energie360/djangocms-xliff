@@ -5,6 +5,7 @@ import pytest
 from cms.api import create_page
 from cms.models import CMSPlugin, Page
 
+from djangocms_xliff.compat import IS_CMS_V4_PLUS
 from djangocms_xliff.exceptions import XliffImportError
 from djangocms_xliff.extractors import extract_units_from_obj
 from djangocms_xliff.imports import (
@@ -14,6 +15,11 @@ from djangocms_xliff.imports import (
 )
 from djangocms_xliff.settings import UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
+
+if IS_CMS_V4_PLUS:
+    from cms.models import PageContent
+else:
+    PageContent = None
 
 
 def get_character_length_test_units() -> List[Unit]:
@@ -87,7 +93,8 @@ def test_extract_and_save_xliff_context(
     page, main_plugin_1, main_plugin_2, second_plugin = page_with_multiple_placeholders_and_multiple_plugins()
 
     # Extract the xliff units from the page
-    units = extract_units_from_obj(page, language_to_translate, include_metadata=False)
+    obj = PageContent.admin_manager.get(page=page, language="en") if IS_CMS_V4_PLUS else page
+    units = extract_units_from_obj(obj, language_to_translate, include_metadata=False)
     xliff_context = create_xliff_page_context(
         units,
         source_language="de",
@@ -138,7 +145,10 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
         field_type="django.db.models.fields.CharField",
     )
 
-    title_obj = page_with_metadata.get_title_obj(language="en")
+    if IS_CMS_V4_PLUS:
+        title_obj = page_with_metadata.get_content_obj(language="en")
+    else:
+        title_obj = page_with_metadata.get_title_obj(language="en")
 
     units = [
         page_unit(
@@ -146,13 +156,6 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
             source=title_obj.title,
             target=title_target_text,
             field_verbose_name="Title",
-            max_length=255,
-        ),
-        page_unit(
-            field_name="page_title",
-            source=title_obj.page_title,
-            target=page_title_target_text,
-            field_verbose_name="Page Title",
             max_length=255,
         ),
         page_unit(
@@ -178,6 +181,16 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
             max_length=None,
         ),
     ]
+    if not IS_CMS_V4_PLUS:
+        units.append(
+            page_unit(
+                field_name="page_title",
+                source=title_obj.page_title,
+                target=page_title_target_text,
+                field_verbose_name="Page Title",
+                max_length=255,
+            ),
+        )
 
     xliff_context = create_xliff_page_context(
         units,
@@ -191,9 +204,13 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
     save_xliff_context(xliff_context)
 
     updated_page = Page.objects.get(pk=xliff_context.obj_id)
-    updated_title_obj = updated_page.get_title_obj(language=language_to_translate)
+    if IS_CMS_V4_PLUS:
+        updated_title_obj = updated_page.get_content_obj(language=language_to_translate)
+    else:
+        updated_title_obj = updated_page.get_title_obj(language=language_to_translate)
 
     assert updated_title_obj.title == title_target_text
     assert updated_title_obj.menu_title == menu_title_target_text
-    assert updated_title_obj.page_title == page_title_target_text
     assert updated_title_obj.meta_description == meta_description_target_text
+    if not IS_CMS_V4_PLUS:
+        assert updated_title_obj.page_title == page_title_target_text

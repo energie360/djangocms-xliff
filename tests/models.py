@@ -1,8 +1,15 @@
 # mypy: ignore-errors
-from cms.extensions import PageExtension, TitleExtension, extension_pool
+from cms.extensions import PageExtension, extension_pool
 from cms.models import CMSPlugin, StaticPlaceholder
 from django.db import models
 from django.db.models import PROTECT, Model, OneToOneField
+
+from djangocms_xliff.compat import IS_CMS_V4_PLUS
+
+if IS_CMS_V4_PLUS:
+    from cms.extensions import PageContentExtension
+else:
+    from cms.extensions import TitleExtension as PageContentExtension
 
 
 class TestOneFieldModel(CMSPlugin):
@@ -53,7 +60,7 @@ class TestPageExtension(PageExtension):
 extension_pool.register(TestPageExtension)
 
 
-class TestTitleExtension(TitleExtension):
+class TestTitleExtension(PageContentExtension):
     title = models.CharField(max_length=100, verbose_name="Title")
 
 
