@@ -1,6 +1,3 @@
-from djangocms_xliff.compat import IS_CMS_V4_PLUS
-
-
 SECRET_KEY = "{}****{}123"
 
 SITE_ID = 1
@@ -14,7 +11,7 @@ LANGUAGES = [
 ]
 
 CMS_TEMPLATES = (("testing.html", "Testing"),)
-CMS_CONFIRM_VERSION4 = IS_CMS_V4_PLUS
+CMS_CONFIRM_VERSION4 = True
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -50,6 +47,7 @@ INSTALLED_APPS = [
     "menus",
     "sekizai",
     "cms",
+    "djangocms_alias",
     "tests",
     "djangocms_xliff",
 ]

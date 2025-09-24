@@ -8,6 +8,17 @@ to standardize the way localizable data are passed between and among tools durin
 With djangocms-xliff it is possible to export all text objects from a page into an XLIFF-compatible file and re-import
 the file at the end of the translation process.
 
+## Migration to django-cms 5
+
+If you are using djangocms-xliff with django-cms with version 3 or lower use the v1 release of this package:
+```shell
+pip install djangocms-xliff==1.*.*
+```
+
+*We are not planning to support this package for django-cms 3 or lower*
+
+Please upgrade to a v2 release if you are using django-cms 4 or higher
+
 ## Installation
 
 Before the installation you need to make sure, that your

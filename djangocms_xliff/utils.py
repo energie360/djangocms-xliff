@@ -1,13 +1,13 @@
 from itertools import groupby
 from typing import Any, Dict, List, Tuple, Type
 
-from cms.models import Page
+from cms.models import Page, PageContent
 from cms.utils.i18n import get_language_object
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
 from django.utils.timezone import localtime, now
+from djangocms_alias.models import AliasContent
 
-from djangocms_xliff.compat import IS_ALIAS_INSTALLED, IS_CMS_V4_PLUS
 from djangocms_xliff.exceptions import XliffConfigurationError, XliffError
 from djangocms_xliff.settings import (
     TEMPLATES_FOLDER_EXPORT,
@@ -20,23 +20,7 @@ from djangocms_xliff.settings import (
 )
 from djangocms_xliff.types import Unit, XliffObj
 
-
-if IS_CMS_V4_PLUS:
-    from cms.models import PageContent
-else:
-    PageContent = None
-
-
-if IS_ALIAS_INSTALLED:
-    from djangocms_alias.models import AliasContent
-else:
-    AliasContent = None
-
-
-if IS_CMS_V4_PLUS:
-    CMSContentType = type[PageContent | AliasContent] if IS_CMS_V4_PLUS else type[PageContent]
-else:
-    CMSContentType = None
+CMSContentType = type[PageContent | AliasContent]
 
 
 def get_xliff_version(version: str) -> XliffVersion:
@@ -65,22 +49,11 @@ def get_xliff_export_template_name(version: XliffVersion) -> str:
 
 
 def get_xliff_export_file_name(obj: XliffObj, target_language: str, delimiter="_") -> str:
-    if IS_CMS_V4_PLUS:
-        path = get_path(obj=obj, language=target_language)
-    else:
-        path = obj.get_absolute_url()
+    path = get_path(obj=obj, language=target_language)
     parts = [part for part in path.split("/") if part][1:]
     name = "_".join(parts)
     date_str = localtime(now()).strftime("%y%m%d%H%M%S")
     return f"{name}{delimiter}{target_language}{delimiter}{date_str}.xliff"
-
-
-def get_draft_page_by_id(page_id: int) -> Page:
-    try:
-        page = Page.objects.get(pk=page_id)
-        return get_draft_page(page=page)
-    except Page.DoesNotExist:
-        raise XliffError(f"Page with id: {page_id} does not exist")
 
 
 def get_versioning_obj_by_id(model: CMSContentType, obj_id: int) -> Page:
@@ -90,25 +63,13 @@ def get_versioning_obj_by_id(model: CMSContentType, obj_id: int) -> Page:
         raise XliffError(f"{model} with id: {obj_id} does not exist")
 
 
-def get_draft_page(page: Page) -> Page:
-    if getattr(page, "publisher_is_draft", False) or IS_CMS_V4_PLUS:
-        return page
-
-    raise XliffError(
-        "Page is not a draft. You probably want to use a draft instead of a published page. "
-        f"Draft page id would be: {page.publisher_public.id}"
-    )
-
-
 def get_obj(content_type_id: int, obj_id: Any) -> XliffObj:
     model = ContentType.objects.get_for_id(content_type_id).model_class()
     if not model:
         raise XliffError(f"ContentType Lookup for content_type_id {content_type_id} with obj_id {obj_id} failed")
 
     if model in [PageContent, AliasContent]:
-        return get_versioning_obj_by_id(model=model, obj_id=obj_id)
-    elif model == Page:
-        return get_draft_page_by_id(obj_id)
+        return get_versioning_obj_by_id(model=model, obj_id=obj_id)  # type: ignore
 
     try:
         return model.objects.get(pk=obj_id)
@@ -118,14 +79,14 @@ def get_obj(content_type_id: int, obj_id: Any) -> XliffObj:
 
 def get_path(obj: XliffObj, language: str) -> str:
     if type(obj) is Page:
-        return obj.get_path(language)
+        return obj.get_path(language) or ""
     elif type(obj) is AliasContent:
         if get_alias_content_path:
             return get_alias_content_path(obj, language)
         return ""
 
     with translation.override(language):
-        return obj.get_absolute_url()
+        return obj.get_absolute_url() or ""
 
 
 def group_units_by_plugin_id(units: List[Unit]) -> List[Tuple[str, List[Unit]]]:

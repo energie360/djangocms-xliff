@@ -14,7 +14,6 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views import View
 
-from djangocms_xliff.compat import IS_CMS_V4_PLUS
 from djangocms_xliff.exceptions import XliffError
 from djangocms_xliff.exports import export_content_as_xliff
 from djangocms_xliff.forms import ExportForm, UploadFileForm
@@ -44,7 +43,7 @@ class XliffView(View):
 @method_decorator(staff_member_required, name="dispatch")
 class ExportView(XliffView):
     template = f"{TEMPLATES_FOLDER_EXPORT}/index.html"
-    form_class: Type[ExportForm] = ExportForm
+    form_class: Type[ExportForm] = ExportForm  # type: ignore
 
     def get(self, request, current_language: str, *args, **kwargs):
         form = self.form_class(current_language)
@@ -100,7 +99,7 @@ class ExportView(XliffView):
 class UploadView(XliffView):
     template = f"{TEMPLATES_FOLDER_IMPORT}/upload.html"
     template_success = f"{TEMPLATES_FOLDER_IMPORT}/preview.html"
-    form_class: Type[UploadFileForm] = UploadFileForm
+    form_class: Type[UploadFileForm] = UploadFileForm  # type: ignore
 
     def get(self, request, current_language: str, *args, **kwargs):
         form = self.form_class()
@@ -175,21 +174,16 @@ class ImportView(XliffView):
             # Determine the HttpResponse for the change_view stage.
             obj = get_obj(content_type_id, obj_id)
 
-            if type(obj) == Page:
-                if IS_CMS_V4_PLUS:
-                    title_obj = obj.get_content_obj(xliff_context.target_language)
-                else:
-                    title_obj = obj.get_title_obj(xliff_context.target_language)
+            if type(obj) is Page:
+                page_content = obj.get_content_obj(xliff_context.target_language)
+
                 page_metadata = {
                     "language": xliff_context.target_language,
-                    "title": title_obj.title,
-                    "slug": title_obj.slug,
-                    "menu_title": title_obj.menu_title,
-                    "meta_description": title_obj.meta_description,
+                    "title": page_content.title,
+                    "menu_title": page_content.menu_title,
+                    "meta_description": page_content.meta_description,
                     "_save": "save",
                 }
-                if not IS_CMS_V4_PLUS:
-                    page_metadata["page_title"] = title_obj.page_title
                 updated_request_post = request.POST.copy()
                 updated_request_post.pop("xliff_json", None)
                 updated_request_post.update(page_metadata)

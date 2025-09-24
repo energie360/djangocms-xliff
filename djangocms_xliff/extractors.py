@@ -1,10 +1,18 @@
 import logging
 from contextlib import suppress
 from functools import partial
-from typing import Generator, List, Tuple, Type
+from typing import Generator, List, Tuple, Type, cast
 
 from cms.extensions import extension_pool
-from cms.models import CMSPlugin, Page, Placeholder, StaticPlaceholder
+from cms.models import (
+    CMSPlugin,
+    Page,
+    PageContent,
+    Placeholder,
+    PlaceholderRelationField,
+    StaticPlaceholder,
+)
+from cms.utils.placeholder import get_declared_placeholders_for_obj
 from django.db.models import (
     CharField,
     Field,
@@ -16,15 +24,14 @@ from django.db.models import (
 )
 from django.utils import translation
 from django.utils.translation import gettext as _
+from djangocms_alias.models import AliasContent
 
-from djangocms_xliff.compat import IS_ALIAS_INSTALLED, IS_CMS_V4_PLUS
 from djangocms_xliff.exceptions import XliffExportError
 from djangocms_xliff.settings import (
     FIELD_EXTRACTORS,
     FIELDS,
     MODEL_METADATA_FIELDS,
     PAGE_CONTENT_METADATA_FIELDS,
-    TITLE_METADATA_FIELDS,
     VALIDATORS,
 )
 from djangocms_xliff.types import Unit, XliffObj
@@ -33,23 +40,6 @@ from djangocms_xliff.utils import (
     get_plugin_id_for_metadata_obj,
     get_type_with_path,
 )
-
-if IS_CMS_V4_PLUS:
-    from cms.models import PageContent, PlaceholderRelationField
-    from cms.utils.placeholder import get_declared_placeholders_for_obj
-
-    PlaceholderField = None
-else:
-    from cms.models import PlaceholderField
-
-    PageContent = PlaceholderRelationField = get_declared_placeholders_for_obj = None
-
-
-if IS_ALIAS_INSTALLED:
-    from djangocms_alias.models import AliasContent
-else:
-    AliasContent = None
-
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +70,8 @@ def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
     units = []
 
     for field in instance._meta.get_fields():
+        field = cast(Field, field)
+
         if not is_field_to_translate(field, instance):
             continue
 
@@ -97,7 +89,7 @@ def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
                     plugin_type=instance.plugin_type,
                     plugin_name=instance.get_plugin_name(),
                     field_name=field.name,
-                    field_type=get_type_with_path(field),
+                    field_type=get_type_with_path(field),  # type: ignore
                     field_verbose_name=field.verbose_name,
                     source=source,
                     max_length=field.max_length,
@@ -126,10 +118,8 @@ def extract_units_from_plugin(cms_plugin: CMSPlugin) -> List[Unit]:
 def extract_units_from_placeholder(placeholder: Placeholder, language: str) -> List[Unit]:
     units = []
 
-    if IS_CMS_V4_PLUS:
-        cms_plugins = placeholder.get_plugins(language).filter(parent__isnull=True).order_by("position")
-    else:
-        cms_plugins = placeholder.get_child_plugins(language).order_by("position")
+    cms_plugins = placeholder.get_plugins(language).filter(parent__isnull=True).order_by("position")
+
     for cms_plugin in cms_plugins:
         logger.debug(f"Plugin: {cms_plugin.pk}, type={cms_plugin.plugin_type}")
         units += extract_units_from_plugin(cms_plugin)
@@ -152,28 +142,12 @@ def get_alias_placeholders(alias_content: AliasContent) -> Generator[Placeholder
         yield alias_content.placeholders.get(slot=declared_placeholders_slot)
 
 
-def get_declared_page_placeholders(page: Page) -> Generator[Placeholder, None, None]:
-    """This function supports CMS versions lower than 4."""
-    if not IS_CMS_V4_PLUS:
-        declared_placeholders_slots = [pl.slot for pl in page.get_declared_placeholders()]
-        logger.debug(f"Declared placeholders in page: {declared_placeholders_slots}")
-
-        declared_static_placeholders = [pl.slot for pl in page.get_declared_static_placeholders({})]
-        logger.debug(f"Static placeholders in page: {declared_static_placeholders}")
-
-        for declared_placeholders_slot in declared_placeholders_slots:
-            yield page.placeholders.get(slot=declared_placeholders_slot)
-
-        for declared_static_placeholder in declared_static_placeholders:
-            yield StaticPlaceholder.objects.get(code=declared_static_placeholder).draft
-
-
 def get_model_placeholders(obj: Type[Model]):
     placeholders = []
     for field in obj._meta.fields:
         field_type = type(field)
 
-        if field_type in [PlaceholderField, PlaceholderRelationField] or (
+        if field_type in [PlaceholderRelationField] or (
             field_type == OneToOneField and field.related_model == StaticPlaceholder
         ):
             placeholder = getattr(obj, field.name, None)
@@ -194,22 +168,16 @@ def get_placeholders(obj: XliffObj):
         return get_page_content_placeholders(obj)
     elif type(obj) is AliasContent:
         return get_alias_placeholders(obj)
-    elif type(obj) is Page:
-        return get_declared_page_placeholders(obj)
     else:
-        return get_model_placeholders(obj)
+        return get_model_placeholders(obj)  # type: ignore
 
 
 def get_metadata_fields(obj: XliffObj) -> Tuple[XliffObj, dict]:
     obj_type = type(obj)
 
-    if obj_type == Page:
-        if IS_CMS_V4_PLUS:
-            target_obj = obj.get_content_obj()
-            fields = PAGE_CONTENT_METADATA_FIELDS
-        else:
-            target_obj = obj.get_title_obj()
-            fields = TITLE_METADATA_FIELDS
+    if obj_type is Page:
+        target_obj = cast(Page, obj).get_content_obj()
+        fields = PAGE_CONTENT_METADATA_FIELDS
     else:
         fields = {f.name: f.verbose_name for f in obj._meta.fields}
         target_obj = obj
@@ -233,7 +201,7 @@ def extract_metadata_from_obj(
         for field_name, field_verbose_name in fields.items():
             target_obj_field = target_obj._meta.get_field(field_name)
 
-            if not is_field_to_translate(target_obj_field, target_obj):
+            if not is_field_to_translate(target_obj_field, target_obj):  # type: ignore
                 continue
 
             source = target_obj_field.value_from_object(target_obj)
@@ -249,7 +217,7 @@ def extract_metadata_from_obj(
                 units.append(
                     model_unit(
                         field_name=target_obj_field.name,
-                        field_type=get_type_with_path(target_obj_field),
+                        field_type=get_type_with_path(target_obj_field),  # type: ignore
                         field_verbose_name=field_verbose_name,
                         source=target_obj_field.value_from_object(target_obj),
                         max_length=target_obj_field.max_length,
@@ -272,7 +240,7 @@ def extract_extension_data_from_obj(obj, language: str) -> List[Unit]:
 def extract_extension_data_from_page(obj: XliffObj, language: str) -> List[Unit]:
     with translation.override(language):
         units = []
-        title_extensions = extension_pool.page_content_extensions if IS_CMS_V4_PLUS else extension_pool.title_extensions
+        title_extensions = extension_pool.page_content_extensions
         for title_extension_class in title_extensions:
             with suppress(title_extension_class.DoesNotExist):
                 instance = title_extension_class.objects.get(
@@ -311,13 +279,13 @@ def extract_units_from_obj(
                 obj=obj,
                 language=language,
                 plugin_id=get_plugin_id_for_metadata_obj(obj),
-                plugin_type=obj._meta.object_name,
-                plugin_name=obj._meta.verbose_name,
+                plugin_type=obj._meta.object_name or "",
+                plugin_name=obj._meta.verbose_name or "",
             )
         )
 
     extension_data_units = []
-    if type(obj) == Page:
+    if type(obj) is Page:
         extension_data_units.extend(extract_extension_data_from_page(obj, language))
 
     return [*metadata_units, *extension_data_units, *plugin_units]

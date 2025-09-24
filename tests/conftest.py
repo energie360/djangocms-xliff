@@ -6,7 +6,6 @@ from cms.models import CMSPlugin, Page, StaticPlaceholder
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 
-from djangocms_xliff.compat import IS_CMS_V4_PLUS
 from djangocms_xliff.types import XliffContext
 from tests.models import (
     TestModelMetadata,
@@ -17,10 +16,7 @@ from tests.models import (
 
 
 def get_page_placeholder(page: Page, slot: str, language: str):
-    if IS_CMS_V4_PLUS:
-        return page.get_placeholders(language).get(slot=slot)
-    else:
-        return page.placeholders.get(slot=slot)
+    return page.get_placeholders(language).get(slot=slot)
 
 
 @pytest.fixture
@@ -201,8 +197,6 @@ def page_with_metadata(create_draft_page) -> Page:
         "menu_title": "Menu Title Test",
         "meta_description": "Meta Description Test",
     }
-    if not IS_CMS_V4_PLUS:
-        page_kwargs["page_title"] = "Page Title Test"
     return create_draft_page(**page_kwargs)
 
 
@@ -220,7 +214,7 @@ def page_with_title_extension(create_draft_page) -> Page:
     language = "en"
 
     page = create_draft_page(language)
-    extended_object = page.get_content_obj(language) if IS_CMS_V4_PLUS else page.get_title_obj(language)
+    extended_object = page.get_content_obj(language)
     TestTitleExtension.objects.create(title="Title Test", extended_object=extended_object)
     return page
 
@@ -228,5 +222,7 @@ def page_with_title_extension(create_draft_page) -> Page:
 @pytest.fixture
 def model_with_metadata() -> TestModelMetadata:
     return TestModelMetadata.objects.create(
-        title="Title Test", slug="model-slug", meta_description="Meta Description for Model"
+        title="Title Test",
+        slug="model-slug",
+        meta_description="Meta Description for Model",
     )

@@ -42,14 +42,6 @@ PAGE_CONTENT_METADATA_FIELDS = {
     "meta_description": _("Description meta tag"),
 }
 
-TITLE_METADATA_FIELDS = {
-    "title": _("Title"),
-    "slug": _("Slug"),
-    "menu_title": _("Menu Title"),
-    "page_title": _("Page Title"),
-    "meta_description": _("Description meta tag"),
-}
-
 MODEL_METADATA_FIELDS = {
     import_string(model_class): config
     for model_class, config in getattr(settings, "DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS", {}).items()

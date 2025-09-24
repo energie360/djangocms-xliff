@@ -1,28 +1,16 @@
 from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple, TypeVar, Union
 
-from cms.models import Page
+from cms.models import Page, PageContent
 from django.db.models import Model
 from django.utils.translation import gettext as _
-
-from djangocms_xliff.compat import IS_CMS_V4_PLUS
-
-
-if IS_CMS_V4_PLUS:
-    from cms.models import PageContent
-
-    Title = None
-else:
-    from cms.models import Title
-
-    PageContent = None
 
 ExportContent = str
 ExportFileName = str
 ExportPage = Tuple[ExportContent, ExportFileName]
 
 DjangoModelType = TypeVar("DjangoModelType", bound=Model)
-XliffObj = Union[Page, PageContent or Title, DjangoModelType]
+XliffObj = Union[Page, PageContent, DjangoModelType]
 
 
 @dataclass

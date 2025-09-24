@@ -1,8 +1,8 @@
 ## Contribute
 
-This project uses poetry for dependency management and packaging.
+This project uses uv for dependency management and packaging.
 
-1. Install poetry from https://python-poetry.org/
+1. Install uv from https://docs.astral.sh/
 
 2. Fork this project into your account
 
@@ -23,17 +23,12 @@ $ git checkout -b feature/<branch_name>
 
 6. Install the dependencies:
 ```shell
-$ poetry install
-```
-
-7. Activate the virtual environment:
-```shell
-$ poetry shell
+$ uv sync
 ```
 
 8. Install [pre-commit](https://pre-commit.com/) for linting, security, formatting, etc. (only needed once):
 ```shell
-$ pre-commit install
+$ uv run pre-commit install
 ```
 
 9. This project uses [tox](https://tox.wiki/en/latest/) to run against all supported python, django and django-cms versions.
@@ -41,7 +36,7 @@ If you are missing a python interpreter install it on your system (or preferably
 Then make sure all tests run successfully:
 
 ```shell
-$ tox
+$ uv run tox
 ```
 
 10. Optionally if you need to generate translations use the following commands:
