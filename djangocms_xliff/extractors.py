@@ -1,12 +1,12 @@
 import logging
+from collections.abc import Callable, Generator
 from contextlib import suppress
 from functools import partial
-from typing import Generator, List, Tuple, Type, cast
+from typing import cast
 
 from cms.extensions import extension_pool
 from cms.models import (
     CMSPlugin,
-    Page,
     PageContent,
     Placeholder,
     PlaceholderRelationField,
@@ -33,6 +33,7 @@ from djangocms_xliff.settings import (
     MODEL_METADATA_FIELDS,
     PAGE_CONTENT_METADATA_FIELDS,
     VALIDATORS,
+    get_alias_content,
 )
 from djangocms_xliff.types import Unit, XliffObj
 from djangocms_xliff.utils import (
@@ -66,7 +67,7 @@ def is_field_to_translate(field: Field, instance: CMSPlugin) -> bool:
     return all(default_validators + validators)
 
 
-def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
+def extract_units_from_plugin_instance(instance: CMSPlugin) -> list[Unit]:
     units = []
 
     for field in instance._meta.get_fields():
@@ -90,7 +91,7 @@ def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
                     plugin_name=instance.get_plugin_name(),
                     field_name=field.name,
                     field_type=get_type_with_path(field),  # type: ignore
-                    field_verbose_name=field.verbose_name,
+                    field_verbose_name=field.verbose_name,  # type: ignore
                     source=source,
                     max_length=field.max_length,
                 )
@@ -98,7 +99,7 @@ def extract_units_from_plugin_instance(instance: CMSPlugin) -> List[Unit]:
     return units
 
 
-def extract_units_from_plugin(cms_plugin: CMSPlugin) -> List[Unit]:
+def extract_units_from_plugin(cms_plugin: CMSPlugin) -> list[Unit]:
     # Get the real DB instance of the given plugin.
     instance, _ = cms_plugin.get_plugin_instance()
 
@@ -115,7 +116,7 @@ def extract_units_from_plugin(cms_plugin: CMSPlugin) -> List[Unit]:
     return units
 
 
-def extract_units_from_placeholder(placeholder: Placeholder, language: str) -> List[Unit]:
+def extract_units_from_placeholder(placeholder: Placeholder, language: str) -> list[Unit]:
     units = []
 
     cms_plugins = placeholder.get_plugins(language).filter(parent__isnull=True).order_by("position")
@@ -126,7 +127,7 @@ def extract_units_from_placeholder(placeholder: Placeholder, language: str) -> L
     return units
 
 
-def get_page_content_placeholders(page_content: PageContent) -> Generator[Placeholder, None, None]:
+def get_page_content_placeholders(page_content: PageContent) -> Generator[Placeholder]:
     declared_placeholders_slots = [pl.slot for pl in get_declared_placeholders_for_obj(page_content)]
     logger.debug(f"Declared placeholders in page: {declared_placeholders_slots}")
 
@@ -134,7 +135,7 @@ def get_page_content_placeholders(page_content: PageContent) -> Generator[Placeh
         yield page_content.placeholders.get(slot=declared_placeholders_slot)
 
 
-def get_alias_placeholders(alias_content: AliasContent) -> Generator[Placeholder, None, None]:
+def get_alias_placeholders(alias_content: AliasContent) -> Generator[Placeholder]:
     declared_placeholders_slots = [pl.slot for pl in get_declared_placeholders_for_obj(alias_content)]
     logger.debug(f"Alias placeholders in page: {declared_placeholders_slots}")
 
@@ -142,7 +143,7 @@ def get_alias_placeholders(alias_content: AliasContent) -> Generator[Placeholder
         yield alias_content.placeholders.get(slot=declared_placeholders_slot)
 
 
-def get_model_placeholders(obj: Type[Model]):
+def get_model_placeholders(obj: type[Model]):
     placeholders = []
     for field in obj._meta.fields:
         field_type = type(field)
@@ -172,15 +173,21 @@ def get_placeholders(obj: XliffObj):
         return get_model_placeholders(obj)  # type: ignore
 
 
-def get_metadata_fields(obj: XliffObj) -> Tuple[XliffObj, dict]:
+def get_metadata_fields(obj: XliffObj) -> tuple[XliffObj, dict]:
     obj_type = type(obj)
 
-    if obj_type is Page:
-        target_obj = cast(Page, obj).get_content_obj()
+    target_obj = obj
+
+    if obj_type is PageContent:
         fields = PAGE_CONTENT_METADATA_FIELDS
+    elif get_alias_content:
+        fields = PAGE_CONTENT_METADATA_FIELDS
+        target_obj = get_alias_content(obj)
     else:
         fields = {f.name: f.verbose_name for f in obj._meta.fields}
-        target_obj = obj
+
+    if target_obj is None:
+        raise XliffExportError(_(f"Did not find metadata for obj: {type(obj)}"))
 
     excluded_fields = MODEL_METADATA_FIELDS.get(obj_type, {}).get("exclude", [])
     for excluded_field in excluded_fields:
@@ -189,13 +196,18 @@ def get_metadata_fields(obj: XliffObj) -> Tuple[XliffObj, dict]:
     return target_obj, fields
 
 
-def extract_metadata_from_obj(
-    obj: XliffObj, language: str, plugin_id: str, plugin_type: str, plugin_name: str
-) -> List[Unit]:
+def extract_metadata_from_obj(obj, language: str, plugin_id_func: Callable | None = None) -> list[Unit]:
     with translation.override(language):
         target_obj, fields = get_metadata_fields(obj)
 
-        model_unit = partial(Unit, plugin_id=plugin_id, plugin_type=plugin_type, plugin_name=plugin_name)
+        plugin_id = plugin_id_func(target_obj) if plugin_id_func else get_plugin_id_for_metadata_obj(target_obj)
+
+        model_unit = partial(
+            Unit,
+            plugin_id=plugin_id,
+            plugin_type=target_obj._meta.object_name or "",
+            plugin_name=target_obj._meta.verbose_name or "",
+        )
 
         units = []
         for field_name, field_verbose_name in fields.items():
@@ -226,40 +238,45 @@ def extract_metadata_from_obj(
         return units
 
 
-def extract_extension_data_from_obj(obj, language: str) -> List[Unit]:
-    plugin_id = get_plugin_id_for_extension_obj(obj)
-    return extract_metadata_from_obj(
-        obj=obj,
-        language=language,
-        plugin_id=plugin_id,
-        plugin_type=obj._meta.object_name,
-        plugin_name=obj._meta.verbose_name,
-    )
+def extract_extension_data_from_page(obj: XliffObj, language: str) -> list[Unit]:
+    obj = cast(PageContent, obj)
+    page = obj.page
 
-
-def extract_extension_data_from_page(obj: XliffObj, language: str) -> List[Unit]:
     with translation.override(language):
         units = []
         title_extensions = extension_pool.page_content_extensions
         for title_extension_class in title_extensions:
             with suppress(title_extension_class.DoesNotExist):
                 instance = title_extension_class.objects.get(
-                    extended_object__page=obj, extended_object__language=language
+                    extended_object__page=page,
+                    extended_object__language=language,
                 )
-                units.extend(extract_extension_data_from_obj(obj=instance, language=language))
+                units.extend(
+                    extract_metadata_from_obj(
+                        obj=instance,
+                        language=language,
+                        plugin_id_func=get_plugin_id_for_extension_obj,
+                    )
+                )
 
         # In rare cases it makes sense to use translated fields on page extensions
         for page_extension_class in extension_pool.page_extensions:
             with suppress(page_extension_class.DoesNotExist):
-                instance = page_extension_class.objects.get(extended_object=obj)
-                units.extend(extract_extension_data_from_obj(obj=instance, language=language))
+                instance = page_extension_class.objects.get(extended_object=page)
+                units.extend(
+                    extract_metadata_from_obj(
+                        obj=instance,
+                        language=language,
+                        plugin_id_func=get_plugin_id_for_extension_obj,
+                    )
+                )
 
         return units
 
 
 def extract_units_from_obj(
     obj: XliffObj, language: str, include_metadata=True, allow_empty_plugins=False
-) -> List[Unit]:
+) -> list[Unit]:
     plugin_units = []
 
     for placeholder in get_placeholders(obj):
@@ -274,18 +291,10 @@ def extract_units_from_obj(
 
     metadata_units = []
     if include_metadata:
-        metadata_units.extend(
-            extract_metadata_from_obj(
-                obj=obj,
-                language=language,
-                plugin_id=get_plugin_id_for_metadata_obj(obj),
-                plugin_type=obj._meta.object_name or "",
-                plugin_name=obj._meta.verbose_name or "",
-            )
-        )
+        metadata_units.extend(extract_metadata_from_obj(obj=obj, language=language))
 
     extension_data_units = []
-    if type(obj) is Page:
+    if type(obj) is PageContent:
         extension_data_units.extend(extract_extension_data_from_page(obj, language))
 
     return [*metadata_units, *extension_data_units, *plugin_units]

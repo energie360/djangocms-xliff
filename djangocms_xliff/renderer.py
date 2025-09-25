@@ -27,5 +27,5 @@ def render_xliff_document(version: XliffVersion, context: XliffContext) -> str:
                 "xliff": context,
             },
         )
-    except TemplateDoesNotExist:
-        raise XliffConfigurationError(f"Template does not exist: {template_name}")
+    except TemplateDoesNotExist as e:
+        raise XliffConfigurationError(f"Template does not exist: {template_name}") from e

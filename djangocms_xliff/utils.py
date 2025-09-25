@@ -1,5 +1,5 @@
 from itertools import groupby
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any
 
 from cms.models import Page, PageContent
 from cms.utils.i18n import get_language_object
@@ -16,7 +16,7 @@ from djangocms_xliff.settings import (
     UNIT_ID_METADATA_ID,
     XLIFF_NAMESPACES,
     XliffVersion,
-    get_alias_content_path,
+    get_alias_content,
 )
 from djangocms_xliff.types import Unit, XliffObj
 
@@ -26,18 +26,18 @@ CMSContentType = type[PageContent | AliasContent]
 def get_xliff_version(version: str) -> XliffVersion:
     try:
         return XliffVersion(version)
-    except ValueError:
-        raise XliffConfigurationError(f'Unsupported xliff version: "{version}"')
+    except ValueError as e:
+        raise XliffConfigurationError(f'Unsupported xliff version: "{version}"') from e
 
 
-def get_xliff_namespaces(version: XliffVersion) -> Dict[str, str]:
+def get_xliff_namespaces(version: XliffVersion) -> dict[str, str]:
     try:
         return XLIFF_NAMESPACES[version]
-    except KeyError:
-        raise XliffConfigurationError(f"Namespace for xliff version: {version.value} does not exist")
+    except KeyError as e:
+        raise XliffConfigurationError(f"Namespace for xliff version: {version.value} does not exist") from e
 
 
-def get_xliff_xml_namespaces(version: XliffVersion) -> Dict[str, str]:
+def get_xliff_xml_namespaces(version: XliffVersion) -> dict[str, str]:
     xml_namespaces = {}
     for name, url in get_xliff_namespaces(version).items():
         xml_namespaces["xmlns" if name == "" else f"xmlns:{name}"] = url
@@ -56,11 +56,11 @@ def get_xliff_export_file_name(obj: XliffObj, target_language: str, delimiter="_
     return f"{name}{delimiter}{target_language}{delimiter}{date_str}.xliff"
 
 
-def get_versioning_obj_by_id(model: CMSContentType, obj_id: int) -> Page:
+def get_versioning_obj_by_id(model: CMSContentType, obj_id: int) -> PageContent:
     try:
         return model.admin_manager.get(id=obj_id)
-    except PageContent.DoesNotExist:
-        raise XliffError(f"{model} with id: {obj_id} does not exist")
+    except PageContent.DoesNotExist as e:
+        raise XliffError(f"{model} with id: {obj_id} does not exist") from e
 
 
 def get_obj(content_type_id: int, obj_id: Any) -> XliffObj:
@@ -73,27 +73,28 @@ def get_obj(content_type_id: int, obj_id: Any) -> XliffObj:
 
     try:
         return model.objects.get(pk=obj_id)
-    except model.DoesNotExist:
-        raise XliffError(f"{model._meta.verbose_name} with id: {obj_id} does not exist")
+    except model.DoesNotExist as e:
+        raise XliffError(f"{model._meta.verbose_name} with id: {obj_id} does not exist") from e
 
 
 def get_path(obj: XliffObj, language: str) -> str:
     if type(obj) is Page:
         return obj.get_path(language) or ""
     elif type(obj) is AliasContent:
-        if get_alias_content_path:
-            return get_alias_content_path(obj, language)
+        if get_alias_content:
+            alias_content = get_alias_content(obj)
+            return alias_content.get_absolute_url(language)
         return ""
 
     with translation.override(language):
-        return obj.get_absolute_url() or ""
+        return obj.get_absolute_url() or ""  # type: ignore
 
 
-def group_units_by_plugin_id(units: List[Unit]) -> List[Tuple[str, List[Unit]]]:
+def group_units_by_plugin_id(units: list[Unit]) -> list[tuple[str, list[Unit]]]:
     return [(plugin_id, list(units)) for plugin_id, units in groupby(units, lambda u: u.plugin_id)]
 
 
-def get_type_with_path(cls: Type) -> str:
+def get_type_with_path(cls: type) -> str:
     typ = type(cls)
     return f"{typ.__module__}.{typ.__name__}"
 
@@ -102,14 +103,14 @@ def get_lang_name(search_code: str) -> str:
     return get_language_object(search_code)["name"]
 
 
-def get_metadata_fields_for_model(obj: XliffObj) -> Dict[str, str]:
+def get_metadata_fields_for_model(obj: XliffObj) -> dict[str, str]:
     from djangocms_xliff.settings import MODEL_METADATA_FIELDS
 
     obj_type = type(obj)
     try:
         return MODEL_METADATA_FIELDS[obj_type]
-    except KeyError:
-        raise XliffError(f"Can't find model {obj_type} in MODEL_METADATA_FIELDS config")
+    except KeyError as e:
+        raise XliffError(f"Can't find model {obj_type} in MODEL_METADATA_FIELDS config") from e
 
 
 def get_plugin_id_for_extension_obj(obj) -> str:

@@ -42,6 +42,6 @@ def test_create_xliff_version_1_2_simple(create_xliff_page_context):
     </file>
 </xliff>
 
-"""
+"""  # noqa: E501
 
     assert render_xliff_document(XliffVersion.V1_2, xliff_context) == expected

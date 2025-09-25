@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import pytest
 from cms.api import add_plugin, create_page
 from cms.models import CMSPlugin, Page, StaticPlaceholder
@@ -46,17 +44,23 @@ def create_draft_page():
             "overwrite_url": "test/example",
         }
 
+        page_title = extra_kwargs.pop("page_title", None)
+
         if extra_kwargs:
             page_kwargs.update(**extra_kwargs)
 
-        return create_page(**page_kwargs)
+        page = create_page(**page_kwargs)
+        page_content = page.get_content_obj(language, force_reload=True)
+        page_content.page_title = page_title
+        page_content.save()  # type: ignore
+        return page
 
     return _create_draft_page
 
 
 @pytest.fixture
 def page_with_one_field_in_plugin(create_draft_page):
-    def _page_with_one_field_in_plugin() -> Tuple[Page, CMSPlugin]:
+    def _page_with_one_field_in_plugin() -> tuple[Page, CMSPlugin]:
         language = "en"
 
         page = create_draft_page(language)
@@ -70,7 +74,7 @@ def page_with_one_field_in_plugin(create_draft_page):
 
 @pytest.fixture
 def page_with_multiple_fields_in_one_plugin(create_draft_page):
-    def _page_with_multiple_fields_in_one_plugin() -> Tuple[Page, CMSPlugin]:
+    def _page_with_multiple_fields_in_one_plugin() -> tuple[Page, CMSPlugin]:
         language = "en"
 
         page = create_draft_page(language)
@@ -92,7 +96,7 @@ def page_with_multiple_fields_in_one_plugin(create_draft_page):
 
 @pytest.fixture
 def page_with_one_nested_plugin(create_draft_page):
-    def _page_with_one_nested_plugin() -> Tuple[Page, CMSPlugin, CMSPlugin]:
+    def _page_with_one_nested_plugin() -> tuple[Page, CMSPlugin, CMSPlugin]:
         language = "en"
 
         page = create_draft_page(language)
@@ -114,7 +118,7 @@ def page_with_one_nested_plugin(create_draft_page):
 
 @pytest.fixture
 def page_with_multiple_placeholders_and_one_plugin(create_draft_page):
-    def _page_with_multiple_placeholders_and_one_plugin() -> Tuple[Page, CMSPlugin, CMSPlugin]:
+    def _page_with_multiple_placeholders_and_one_plugin() -> tuple[Page, CMSPlugin, CMSPlugin]:
         language = "en"
 
         page = create_draft_page(language)
@@ -136,7 +140,7 @@ def page_with_multiple_placeholders_and_one_plugin(create_draft_page):
 
 @pytest.fixture
 def page_with_multiple_placeholders_and_multiple_plugins(create_draft_page):
-    def _page_with_multiple_placeholders_and_multiple_plugins() -> Tuple[Page, CMSPlugin, CMSPlugin, CMSPlugin]:
+    def _page_with_multiple_placeholders_and_multiple_plugins() -> tuple[Page, CMSPlugin, CMSPlugin, CMSPlugin]:
         language = "en"
 
         page = create_draft_page(language)
@@ -173,7 +177,7 @@ def page_with_multiple_placeholders_and_multiple_plugins(create_draft_page):
 
 @pytest.fixture
 def model_with_static_placeholder():
-    def _model_with_one_field_in_plugin() -> Tuple[Model, CMSPlugin]:
+    def _model_with_one_field_in_plugin() -> tuple[Model, CMSPlugin]:
         language = "en"
 
         static_placeholder = StaticPlaceholder.objects.create(name="test", code="main")
@@ -194,6 +198,7 @@ def page_with_metadata(create_draft_page) -> Page:
     page_kwargs = {
         "language": "en",
         "title": "Title Test",
+        "page_title": "Page Title Test",
         "menu_title": "Menu Title Test",
         "meta_description": "Meta Description Test",
     }

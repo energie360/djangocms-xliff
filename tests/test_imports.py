@@ -1,5 +1,4 @@
 from functools import partial
-from typing import List
 
 import pytest
 from cms.api import create_page
@@ -16,7 +15,7 @@ from djangocms_xliff.settings import UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
 
 
-def get_character_length_test_units() -> List[Unit]:
+def get_character_length_test_units() -> list[Unit]:
     return [
         Unit(
             plugin_id="123",

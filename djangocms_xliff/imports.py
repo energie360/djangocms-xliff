@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from cms.models import CMSPlugin, Page
 from django.utils import translation
@@ -11,6 +10,7 @@ from djangocms_xliff.settings import (
     UNIT_ID_DELIMITER,
     UNIT_ID_EXTENSION_DATA_ID,
     UNIT_ID_METADATA_ID,
+    get_alias_content,
 )
 from djangocms_xliff.types import Unit, XliffContext, XliffObj
 from djangocms_xliff.utils import get_lang_name, get_obj
@@ -18,7 +18,7 @@ from djangocms_xliff.utils import get_lang_name, get_obj
 logger = logging.getLogger(__name__)
 
 
-def save_xliff_units_for_metadata(units: List[Unit], target_language: str, lazy_xliff_obj) -> None:
+def save_xliff_units_for_metadata(units: list[Unit], target_language: str, lazy_xliff_obj) -> None:
     with translation.override(target_language):
         for unit in units:
             try:
@@ -31,13 +31,18 @@ def save_xliff_units_for_metadata(units: List[Unit], target_language: str, lazy_
 
             if type(obj) is Page:
                 obj = obj.get_content_obj(language=target_language)
+            elif get_alias_content:
+                obj = get_alias_content(obj)
+
+            if obj is None:
+                raise XliffImportError(_(f"Did not find metadata for obj: {type(obj)}"))
 
             target = unit.target
             setattr(obj, field_name, target)
             obj.save()  # type: ignore
 
 
-def save_xliff_units_for_extension_data(units: List[Unit], target_language: str) -> None:
+def save_xliff_units_for_extension_data(units: list[Unit], target_language: str) -> None:
     with translation.override(target_language):
         for unit in units:
             content_type_id, instance_id, field_name = unit.field_name.split(UNIT_ID_DELIMITER)
@@ -45,10 +50,10 @@ def save_xliff_units_for_extension_data(units: List[Unit], target_language: str)
 
             target = unit.target
             setattr(obj, field_name, target)
-            obj.save()
+            obj.save()  # type: ignore
 
 
-def save_xliff_units_for_cms_plugin(units: List[Unit], plugin_id: str) -> None:
+def save_xliff_units_for_cms_plugin(units: list[Unit], plugin_id: str) -> None:
     try:
         cms_plugin = CMSPlugin.objects.get(pk=plugin_id)
     except CMSPlugin.DoesNotExist:
@@ -100,7 +105,7 @@ def validate_page_with_xliff_context(obj: XliffObj, xliff_context: XliffContext,
         raise XliffImportError(error_message % error_params)
 
 
-def validate_units_max_lengths(units: List[Unit]):
+def validate_units_max_lengths(units: list[Unit]):
     for unit in units:
         if unit.is_max_length_exceeded():
             error_message = _(

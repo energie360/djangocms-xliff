@@ -27,22 +27,23 @@ class Command(BaseCommand):
             current_language = options["current_language"]
 
             obj = get_obj(content_type_id, obj_id)
-            units = extract_units_from_obj(obj, current_language)
+            plugin_and_units = extract_units_from_obj(obj, current_language)
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Found {len(units)} xliff units on page with id: {obj.pk} and language: {current_language}"
+                    f"Found {len(plugin_and_units)} xliff units on page with id: {obj.pk} "
+                    "and language: {current_language}"
                 )
             )
-            self.stdout.write()
+            self.stdout.write("")
 
-            for plugin_id, units in group_units_by_plugin_id(units):
+            for plugin_id, units in group_units_by_plugin_id(plugin_and_units):
                 self.stdout.write(f"Plugin: {plugin_id}")
-                self.stdout.write()
+                self.stdout.write("")
                 for unit in units:
                     pprint.pprint(unit)
-                self.stdout.write()
-                self.stdout.write()
+                self.stdout.write("")
+                self.stdout.write("")
 
         except XliffError as e:
-            raise CommandError(e)
+            raise CommandError(e) from e

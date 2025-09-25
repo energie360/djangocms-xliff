@@ -24,7 +24,7 @@ def test_parse_xliff_version_1_2_simple(create_xliff_page_context):
                 </body>
             </file>
         </xliff>
-    """
+    """  # noqa: E501
     file_buffer = io.StringIO(file_content)
 
     expected = create_xliff_page_context(
@@ -74,7 +74,7 @@ def test_parse_xliff_version_1_2_utf_8_characters(create_xliff_page_context):
                 </body>
             </file>
         </xliff>
-    """
+    """  # noqa: E501
     file_buffer = io.StringIO(file_content)
 
     expected = create_xliff_page_context(
@@ -142,7 +142,7 @@ def test_parse_xliff_version_1_2_html(create_xliff_page_context):
                 </body>
             </file>
         </xliff>
-    """
+    """  # noqa: E501
     file_buffer = io.StringIO(file_content)
 
     expected = create_xliff_page_context(
@@ -154,8 +154,8 @@ def test_parse_xliff_version_1_2_html(create_xliff_page_context):
                 field_name="body",
                 field_type="django.db.models.CharField",
                 field_verbose_name="Body",
-                source="""<h2>Willkommen</h2>\n<h3>Das ist ein Beispieltext</h3>\n<p>Welche funktionen bietet das XLIFF package?</p>\n<ul>\n    <li>Export einer CMS Seite als XLIFF</li>\n    <li>Import der XLIFF Datei mit einer Vorschau</li>\n</ul>\n<p>Bitte beachten Sie, dass komplexe Typen, Bilder, Medien und Links nicht Teil des Übersetzungsprozesses sind und manuell übersetzt werden müssen.</p>""",
-                target="""<h2>Bienvenue</h2>\n<h3>Ceci est un exemple de texte</h3>\n<p>Quelles sont les fonctions offertes par le package XLIFF?</p>\n<ul>\n    <li>Exporter une page CMS au format XLIFF</li>\n    <li>Importer le fichier XLIFF avec un aperçu</li>\n</ul>\n<p>Veuillez noter que les types complexes, les images, les médias et les liens ne font pas partie du processus de traduction et doivent être traduits manuellement.</p>""",
+                source="""<h2>Willkommen</h2>\n<h3>Das ist ein Beispieltext</h3>\n<p>Welche funktionen bietet das XLIFF package?</p>\n<ul>\n    <li>Export einer CMS Seite als XLIFF</li>\n    <li>Import der XLIFF Datei mit einer Vorschau</li>\n</ul>\n<p>Bitte beachten Sie, dass komplexe Typen, Bilder, Medien und Links nicht Teil des Übersetzungsprozesses sind und manuell übersetzt werden müssen.</p>""",  # noqa: E501
+                target="""<h2>Bienvenue</h2>\n<h3>Ceci est un exemple de texte</h3>\n<p>Quelles sont les fonctions offertes par le package XLIFF?</p>\n<ul>\n    <li>Exporter une page CMS au format XLIFF</li>\n    <li>Importer le fichier XLIFF avec un aperçu</li>\n</ul>\n<p>Veuillez noter que les types complexes, les images, les médias et les liens ne font pas partie du processus de traduction et doivent être traduits manuellement.</p>""",  # noqa: E501
             ),
         ],
         path="test/example",

@@ -38,7 +38,9 @@ VALIDATORS = [
 
 PAGE_CONTENT_METADATA_FIELDS = {
     "title": _("Title"),
+    # "slug": _("Slug"),
     "menu_title": _("Menu Title"),
+    "page_title": _("Page Title"),
     "meta_description": _("Description meta tag"),
 }
 
@@ -47,5 +49,5 @@ MODEL_METADATA_FIELDS = {
     for model_class, config in getattr(settings, "DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS", {}).items()
 }
 
-ALIAS_CONTENT_PATH = getattr(settings, "DJANGOCMS_XLIFF_ALIAS_CONTENT_PATH", "")
-get_alias_content_path = import_string(ALIAS_CONTENT_PATH) if ALIAS_CONTENT_PATH else None
+ALIAS_CONTENT = getattr(settings, "DJANGOCMS_XLIFF_ALIAS_CONTENT", "")
+get_alias_content = import_string(ALIAS_CONTENT) if ALIAS_CONTENT else None

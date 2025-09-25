@@ -1,6 +1,5 @@
 import json
 from dataclasses import asdict
-from typing import Type
 
 from cms.admin.pageadmin import PageAdmin
 from cms.models import Page
@@ -30,7 +29,7 @@ from djangocms_xliff.utils import get_lang_name, get_obj
 
 class XliffView(View):
     template: str
-    form_class: Type[Form]
+    form_class: type[Form]
 
     def error_response(self, message):
         return render(
@@ -43,7 +42,7 @@ class XliffView(View):
 @method_decorator(staff_member_required, name="dispatch")
 class ExportView(XliffView):
     template = f"{TEMPLATES_FOLDER_EXPORT}/index.html"
-    form_class: Type[ExportForm] = ExportForm  # type: ignore
+    form_class: type[ExportForm] = ExportForm  # type: ignore
 
     def get(self, request, current_language: str, *args, **kwargs):
         form = self.form_class(current_language)
@@ -99,7 +98,7 @@ class ExportView(XliffView):
 class UploadView(XliffView):
     template = f"{TEMPLATES_FOLDER_IMPORT}/upload.html"
     template_success = f"{TEMPLATES_FOLDER_IMPORT}/preview.html"
-    form_class: Type[UploadFileForm] = UploadFileForm  # type: ignore
+    form_class: type[UploadFileForm] = UploadFileForm  # type: ignore
 
     def get(self, request, current_language: str, *args, **kwargs):
         form = self.form_class()
@@ -193,7 +192,7 @@ class ImportView(XliffView):
                 page_admin = PageAdmin(Page, admin.site)
                 return page_admin.change_view(request, str(obj.pk))
 
-            model_admin = admin.site._registry[obj._meta.model]
+            model_admin = admin.site._registry[obj._meta.model]  # type: ignore
             return model_admin.response_change(request, obj)
         except XliffError as e:
             return self.error_response(e)

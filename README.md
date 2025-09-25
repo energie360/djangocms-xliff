@@ -218,17 +218,18 @@ DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS = {
 }
 ```
 
-If you want to specify a URL for your alias content, you can set the following setting variable.
+If you have a custom alias content in your app, you need set the following setting variable.
+You need to make sure that the model has a `get_absolute_url(language: str)` method
 
 ```python
-DJANGOCMS_XLIFF_ALIAS_CONTENT_PATH = "your_module.xliff.alias_content_path"
+DJANGOCMS_XLIFF_ALIAS_CONTENT = "your_module.xliff.get_alias_content"
 
 
 # The signature of the path function must be the following:
-def alias_content_path(obj: XliffObj, language: str):
-    if hasattr(obj.alias, "magazine_article"):
-        return obj.alias.magazine_article.get_absolute_url(language)
-    return ""
+def get_alias_content(content: AliasContent, language: str):
+    if hasattr(content.alias, "magazine_article"):
+        return content.alias.magazine_article
+    return None
 ```
 
 ## Contribute

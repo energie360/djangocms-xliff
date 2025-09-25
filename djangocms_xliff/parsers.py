@@ -1,10 +1,9 @@
 import abc
 from html import unescape
-from typing import Optional, Tuple, Union
-from xml.etree import ElementTree as ET
+from typing import TYPE_CHECKING
 
 from cms.models import Page
-from defusedxml.ElementTree import parse
+from defusedxml.ElementTree import ParseError, parse
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext as _
 
@@ -13,9 +12,12 @@ from djangocms_xliff.settings import UNIT_ID_DELIMITER, XliffVersion
 from djangocms_xliff.types import Unit, XliffContext
 from djangocms_xliff.utils import get_xliff_namespaces, get_xliff_version
 
+if TYPE_CHECKING:
+    from xml.etree.ElementTree import Element  # nosec
+
 
 class VersionParser(abc.ABC):
-    def __init__(self, xliff_element: ET.Element, xml_namespaces: dict):
+    def __init__(self, xliff_element: "Element", xml_namespaces: dict):
         self.xliff_element = xliff_element
         self.xml_namespaces = xml_namespaces
 
@@ -25,7 +27,7 @@ class VersionParser(abc.ABC):
 
 
 class Version12(VersionParser):
-    def __init__(self, xliff_element: ET.Element, xml_namespaces: dict):
+    def __init__(self, xliff_element: "Element", xml_namespaces: dict):
         super().__init__(xliff_element, xml_namespaces)
 
         file_element = xliff_element.find("file", namespaces=self.xml_namespaces)
@@ -36,10 +38,10 @@ class Version12(VersionParser):
         if body_element is None:
             raise XliffError("XLIFF Error: Missing <body> in <file>")
 
-        self.file_element: ET.Element = file_element
-        self.body_element: ET.Element = body_element
+        self.file_element: Element = file_element
+        self.body_element: Element = body_element
 
-    def parse_file_element(self) -> Tuple[str, str, str]:
+    def parse_file_element(self) -> tuple[str, str, str]:
         file_element = self.xliff_element.find("file", namespaces=self.xml_namespaces)
         if file_element is None:
             raise XliffError("XLIFF Error: Missing file tag")
@@ -54,12 +56,12 @@ class Version12(VersionParser):
 
         return source_language, target_language, path
 
-    def parse_tool_element(self) -> Tuple[int, int]:
+    def parse_tool_element(self) -> tuple[int, int]:
         tool_element = self.file_element.find("tool", namespaces=self.xml_namespaces)
         if tool_element is None:
             raise XliffError("XLIFF Error: Missing <tool> in <file>")
 
-        content_type_id: Union[str, int]
+        content_type_id: str | int
         try:
             content_type_id, obj_id = tool_element.attrib["tool-id"].split(UNIT_ID_DELIMITER)
         except ValueError:
@@ -128,17 +130,17 @@ class Version12(VersionParser):
 def parse_xliff_document(file) -> XliffContext:
     try:
         doc = parse(file)
-    except ET.ParseError:
-        raise XliffError(_("Invalid xml"))
+    except ParseError as e:
+        raise XliffError(_("Invalid xml")) from e
 
     xliff_element = doc.getroot()
 
-    found_version = get_xliff_version(xliff_element.attrib["version"])
+    found_version = get_xliff_version(xliff_element.attrib["version"])  # type: ignore
     xml_namespaces = get_xliff_namespaces(found_version)
 
-    parser: Optional[VersionParser] = None
+    parser: VersionParser | None = None
     if found_version == XliffVersion.V1_2:
-        parser = Version12(xliff_element, xml_namespaces)
+        parser = Version12(xliff_element, xml_namespaces)  # type: ignore
 
     if parser is None:
         raise XliffConfigurationError(f"Missing VersionParser for version: {found_version.value}")
