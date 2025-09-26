@@ -13,6 +13,8 @@ LANGUAGES = [
 CMS_TEMPLATES = (("testing.html", "Testing"),)
 CMS_CONFIRM_VERSION4 = True
 
+USE_TZ = True
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

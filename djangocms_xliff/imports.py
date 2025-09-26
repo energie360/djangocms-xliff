@@ -1,8 +1,9 @@
 import logging
 
-from cms.models import CMSPlugin, Page
+from cms.models import CMSPlugin
 from django.utils import translation
 from django.utils.translation import gettext as _
+from djangocms_alias.models import AliasContent
 
 from djangocms_xliff.exceptions import XliffImportError
 from djangocms_xliff.settings import (
@@ -10,29 +11,21 @@ from djangocms_xliff.settings import (
     UNIT_ID_DELIMITER,
     UNIT_ID_EXTENSION_DATA_ID,
     UNIT_ID_METADATA_ID,
-    get_alias_content,
 )
-from djangocms_xliff.types import Unit, XliffContext, XliffObj
-from djangocms_xliff.utils import get_lang_name, get_obj
+from djangocms_xliff.types import Unit, XliffContext
+from djangocms_xliff.utils import get_lang_name, get_obj, must_get_model_for_alias_content
 
 logger = logging.getLogger(__name__)
 
 
-def save_xliff_units_for_metadata(units: list[Unit], target_language: str, lazy_xliff_obj) -> None:
+def save_xliff_units_for_metadata(units: list[Unit], target_language: str) -> None:
     with translation.override(target_language):
         for unit in units:
-            try:
-                content_type_id, instance_id, field_name = unit.field_name.split(UNIT_ID_DELIMITER)
-                obj = get_obj(int(content_type_id), instance_id)
-            except ValueError:
-                # For backwards compatibility, if there are existing xliff files
-                field_name = unit.field_name
-                obj = lazy_xliff_obj()
+            content_type_id, instance_id, field_name = unit.field_name.split(UNIT_ID_DELIMITER)
+            obj = get_obj(int(content_type_id), instance_id)
 
-            if type(obj) is Page:
-                obj = obj.get_content_obj(language=target_language)
-            elif get_alias_content:
-                obj = get_alias_content(obj)
+            if type(obj) is AliasContent:
+                obj = must_get_model_for_alias_content(obj)
 
             if obj is None:
                 raise XliffImportError(_(f"Did not find metadata for obj: {type(obj)}"))
@@ -60,7 +53,7 @@ def save_xliff_units_for_cms_plugin(units: list[Unit], plugin_id: str) -> None:
         logger.debug(f"Found plugin with id: {plugin_id} in xliff, but not in database")
         return
 
-    instance, plugin = cms_plugin.get_plugin_instance()
+    instance, _ = cms_plugin.get_plugin_instance()
 
     for unit in units:
         field_name = unit.field_name
@@ -77,21 +70,14 @@ def save_xliff_units_for_cms_plugin(units: list[Unit], plugin_id: str) -> None:
 def save_xliff_context(xliff_context: XliffContext) -> None:
     for plugin_id, units in xliff_context.grouped_units:
         if plugin_id.startswith(UNIT_ID_METADATA_ID):
-            save_xliff_units_for_metadata(units, xliff_context.target_language, lambda: xliff_context.obj)
+            save_xliff_units_for_metadata(units, xliff_context.target_language)
         elif plugin_id.startswith(UNIT_ID_EXTENSION_DATA_ID):
             save_xliff_units_for_extension_data(units, xliff_context.target_language)
         else:
             save_xliff_units_for_cms_plugin(units, plugin_id)
 
 
-def validate_page_with_xliff_context(obj: XliffObj, xliff_context: XliffContext, current_language: str):
-    obj_id = obj.pk
-    xliff_obj_id = xliff_context.obj_id
-    if obj_id != xliff_obj_id:
-        error_message = _('Selected page id: "%(obj_id)s" is not the same as xliff page id: "%(xliff_obj_id)s"')
-        error_params = {"obj_id": obj_id, "xliff_obj_id": xliff_obj_id}
-        raise XliffImportError(error_message % error_params)
-
+def validate_page_with_xliff_context(xliff_context: XliffContext, current_language: str) -> None:
     xliff_target_language = xliff_context.target_language
     if xliff_target_language != current_language:
         error_message = _(
@@ -121,6 +107,6 @@ def validate_units_max_lengths(units: list[Unit]):
             raise XliffImportError(error_message % error_params)
 
 
-def validate_xliff(obj: XliffObj, xliff_context: XliffContext, current_language: str) -> None:
+def validate_xliff(xliff_context: XliffContext, current_language: str) -> None:
     validate_units_max_lengths(xliff_context.units)
-    validate_page_with_xliff_context(obj, xliff_context, current_language)
+    validate_page_with_xliff_context(xliff_context, current_language)

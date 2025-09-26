@@ -1,8 +1,6 @@
 import json
 from dataclasses import asdict
 
-from cms.admin.pageadmin import PageAdmin
-from cms.models import Page
 from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.forms import Form
@@ -113,8 +111,7 @@ class UploadView(XliffView):
             uploaded_file = form.cleaned_data["file"]
             xliff_context = parse_xliff_document(uploaded_file)
 
-            obj = get_obj(content_type_id, obj_id)
-            validate_xliff(obj, xliff_context, current_language)
+            validate_xliff(xliff_context, current_language)
 
             return self.render_template_success(uploaded_file.name, xliff_context)
         except XliffError as e:
@@ -170,27 +167,7 @@ class ImportView(XliffView):
             xliff_context = XliffContext.from_dict(data)
             save_xliff_context(xliff_context)
 
-            # Determine the HttpResponse for the change_view stage.
             obj = get_obj(content_type_id, obj_id)
-
-            if type(obj) is Page:
-                page_content = obj.get_content_obj(xliff_context.target_language)
-
-                page_metadata = {
-                    "language": xliff_context.target_language,
-                    "title": page_content.title,
-                    "menu_title": page_content.menu_title,
-                    "meta_description": page_content.meta_description,
-                    "_save": "save",
-                }
-                updated_request_post = request.POST.copy()
-                updated_request_post.pop("xliff_json", None)
-                updated_request_post.update(page_metadata)
-
-                request.POST = updated_request_post
-
-                page_admin = PageAdmin(Page, admin.site)
-                return page_admin.change_view(request, str(obj.pk))
 
             model_admin = admin.site._registry[obj._meta.model]  # type: ignore
             return model_admin.response_change(request, obj)

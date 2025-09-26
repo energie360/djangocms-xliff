@@ -49,5 +49,5 @@ MODEL_METADATA_FIELDS = {
     for model_class, config in getattr(settings, "DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS", {}).items()
 }
 
-ALIAS_CONTENT = getattr(settings, "DJANGOCMS_XLIFF_ALIAS_CONTENT", "")
-get_alias_content = import_string(ALIAS_CONTENT) if ALIAS_CONTENT else None
+MODEL_FOR_ALIAS_CONTENT = getattr(settings, "DJANGOCMS_XLIFF_MODEL_FOR_ALIAS_CONTENT", "")
+get_model_for_alias_content = import_string(MODEL_FOR_ALIAS_CONTENT) if MODEL_FOR_ALIAS_CONTENT else None

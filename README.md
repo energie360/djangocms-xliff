@@ -222,11 +222,11 @@ If you have a custom alias content in your app, you need set the following setti
 You need to make sure that the model has a `get_absolute_url(language: str)` method
 
 ```python
-DJANGOCMS_XLIFF_ALIAS_CONTENT = "your_module.xliff.get_alias_content"
+DJANGOCMS_XLIFF_MODEL_FOR_ALIAS_CONTENT = "your_module.xliff.get_model_for_alias_content"
 
 
 # The signature of the path function must be the following:
-def get_alias_content(content: AliasContent, language: str):
+def get_model_for_alias_content(content: AliasContent):
     if hasattr(content.alias, "magazine_article"):
         return content.alias.magazine_article
     return None

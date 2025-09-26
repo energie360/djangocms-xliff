@@ -2,7 +2,8 @@ from functools import partial
 
 import pytest
 from cms.api import create_page
-from cms.models import CMSPlugin, Page, PageContent
+from cms.models import CMSPlugin, PageContent
+from django.contrib.contenttypes.models import ContentType
 
 from djangocms_xliff.exceptions import XliffImportError
 from djangocms_xliff.extractors import extract_units_from_obj
@@ -11,7 +12,7 @@ from djangocms_xliff.imports import (
     validate_page_with_xliff_context,
     validate_units_max_lengths,
 )
-from djangocms_xliff.settings import UNIT_ID_METADATA_ID
+from djangocms_xliff.settings import UNIT_ID_DELIMITER, UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
 
 
@@ -58,18 +59,17 @@ def test_page_and_context_cant_have_different_id(create_xliff_page_context):
 
     assert page.pk != xliff_context.obj_id
     with pytest.raises(XliffImportError):
-        validate_page_with_xliff_context(page, xliff_context, "de")
+        validate_page_with_xliff_context(xliff_context, "de")
 
 
 @pytest.mark.django_db
 def test_current_language_and_context_cant_have_different_target_language(create_xliff_page_context):
     current_language = "fr"
 
-    page = create_page("Test", "testing.html", "de")
     xliff_context = create_xliff_page_context([], target_language="de")
 
     with pytest.raises(XliffImportError):
-        validate_page_with_xliff_context(page, xliff_context, current_language)
+        validate_page_with_xliff_context(xliff_context, current_language)
 
 
 @pytest.mark.django_db
@@ -119,6 +119,15 @@ def test_extract_and_save_xliff_context(
     assert main_plugin_2_updated.lead == main_plugin_2_target_text_lead  # type: ignore
 
 
+def field_name_format(field: str, content_type, obj) -> str:
+    infos = [
+        str(content_type.pk),
+        str(obj.pk),
+        field,
+    ]
+    return UNIT_ID_DELIMITER.join(infos)
+
+
 @pytest.mark.django_db
 def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
     language_to_translate = "de"
@@ -137,33 +146,34 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
         field_type="django.db.models.fields.CharField",
     )
 
+    content_type = ContentType.objects.get_for_model(PageContent)
     title_obj = page_with_metadata.get_content_obj(language="en")
 
     units = [
         page_unit(
-            field_name="title",
+            field_name=field_name_format("title", content_type, title_obj),
             source=title_obj.title,
             target=title_target_text,
             field_verbose_name="Title",
             max_length=255,
         ),
         page_unit(
-            field_name="slug",
+            field_name=field_name_format("slug", content_type, title_obj),
             source=title_obj.page_title,
             target=slug_target_text,
             field_verbose_name="Slug",
             max_length=255,
         ),
         page_unit(
-            field_name="menu_title",
+            field_name=field_name_format("menu_title", content_type, title_obj),
             source=title_obj.menu_title,
             target=menu_title_target_text,
             field_verbose_name="Menu Title",
             max_length=255,
         ),
         page_unit(
+            field_name=field_name_format("meta_description", content_type, title_obj),
             field_type="django.db.models.fields.TextField",
-            field_name="meta_description",
             source=title_obj.meta_description,
             target=meta_description_target_text,
             field_verbose_name="Description meta tag",
@@ -182,9 +192,8 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
     # Import the units
     save_xliff_context(xliff_context)
 
-    updated_page = Page.objects.get(pk=xliff_context.obj_id)
-    updated_title_obj = updated_page.get_content_obj(language=language_to_translate)
+    updated_page_content = PageContent.objects.get(pk=xliff_context.obj_id)
 
-    assert updated_title_obj.title == title_target_text
-    assert updated_title_obj.menu_title == menu_title_target_text
-    assert updated_title_obj.meta_description == meta_description_target_text
+    assert updated_page_content.title == title_target_text
+    assert updated_page_content.menu_title == menu_title_target_text
+    assert updated_page_content.meta_description == meta_description_target_text

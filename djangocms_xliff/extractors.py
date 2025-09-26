@@ -33,13 +33,13 @@ from djangocms_xliff.settings import (
     MODEL_METADATA_FIELDS,
     PAGE_CONTENT_METADATA_FIELDS,
     VALIDATORS,
-    get_alias_content,
 )
 from djangocms_xliff.types import Unit, XliffObj
 from djangocms_xliff.utils import (
     get_plugin_id_for_extension_obj,
     get_plugin_id_for_metadata_obj,
     get_type_with_path,
+    must_get_model_for_alias_content,
 )
 
 logger = logging.getLogger(__name__)
@@ -180,9 +180,9 @@ def get_metadata_fields(obj: XliffObj) -> tuple[XliffObj, dict]:
 
     if obj_type is PageContent:
         fields = PAGE_CONTENT_METADATA_FIELDS
-    elif get_alias_content:
+    elif obj_type is AliasContent:
         fields = PAGE_CONTENT_METADATA_FIELDS
-        target_obj = get_alias_content(obj)
+        target_obj = must_get_model_for_alias_content(obj)  # type: ignore
     else:
         fields = {f.name: f.verbose_name for f in obj._meta.fields}
 

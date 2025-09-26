@@ -16,7 +16,7 @@ from djangocms_xliff.settings import (
     UNIT_ID_METADATA_ID,
     XLIFF_NAMESPACES,
     XliffVersion,
-    get_alias_content,
+    get_model_for_alias_content,
 )
 from djangocms_xliff.types import Unit, XliffObj
 
@@ -77,14 +77,37 @@ def get_obj(content_type_id: int, obj_id: Any) -> XliffObj:
         raise XliffError(f"{model._meta.verbose_name} with id: {obj_id} does not exist") from e
 
 
+def get_latest_obj_by_version(obj: PageContent | AliasContent, language: str) -> XliffObj | None:
+    model = obj.__class__
+    try:
+        filter_kwargs: dict = {"language": language}
+
+        if type(obj) is PageContent:
+            filter_kwargs["page"] = obj.page
+        elif type(obj) is AliasContent:
+            filter_kwargs["alias"] = obj.alias
+        else:
+            return None
+
+        return model.admin_manager.latest_content(**filter_kwargs).get()
+    except model.DoesNotExist as e:
+        raise XliffError(f"Did not find latest version for {type(obj)}: {obj.pk}") from e
+
+
+def must_get_model_for_alias_content(obj: AliasContent):
+    if get_model_for_alias_content is None:
+        raise XliffConfigurationError(
+            "You have xliff content for alias content, but no get_model_for_alias_content() handler is configured"
+        )
+    return get_model_for_alias_content(obj)
+
+
 def get_path(obj: XliffObj, language: str) -> str:
     if type(obj) is Page:
         return obj.get_path(language) or ""
     elif type(obj) is AliasContent:
-        if get_alias_content:
-            alias_content = get_alias_content(obj)
-            return alias_content.get_absolute_url(language)
-        return ""
+        alias_content = must_get_model_for_alias_content(obj)
+        return alias_content.get_absolute_url(language)
 
     with translation.override(language):
         return obj.get_absolute_url() or ""  # type: ignore
