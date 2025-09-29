@@ -1,7 +1,6 @@
 import logging
 from collections.abc import Callable, Generator
 from contextlib import suppress
-from functools import partial
 from typing import cast
 
 from cms.extensions import extension_pool
@@ -23,15 +22,15 @@ from django.db.models import (
     URLField,
 )
 from django.utils import translation
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext
 from djangocms_alias.models import AliasContent
 
 from djangocms_xliff.exceptions import XliffExportError
 from djangocms_xliff.settings import (
     FIELD_EXTRACTORS,
     FIELDS,
+    METADATA_FIELDS,
     MODEL_METADATA_FIELDS,
-    PAGE_CONTENT_METADATA_FIELDS,
     VALIDATORS,
 )
 from djangocms_xliff.types import Unit, XliffObj
@@ -179,15 +178,15 @@ def get_metadata_fields(obj: XliffObj) -> tuple[XliffObj, dict]:
     target_obj = obj
 
     if obj_type is PageContent:
-        fields = PAGE_CONTENT_METADATA_FIELDS
+        fields = METADATA_FIELDS
     elif obj_type is AliasContent:
-        fields = PAGE_CONTENT_METADATA_FIELDS
+        fields = METADATA_FIELDS
         target_obj = must_get_model_for_alias_content(obj)  # type: ignore
     else:
         fields = {f.name: f.verbose_name for f in obj._meta.fields}
 
     if target_obj is None:
-        raise XliffExportError(_(f"Did not find metadata for obj: {type(obj)}"))
+        raise XliffExportError(gettext(f"Did not find metadata for obj: {type(obj)}"))
 
     excluded_fields = MODEL_METADATA_FIELDS.get(obj_type, {}).get("exclude", [])
     for excluded_field in excluded_fields:
@@ -200,42 +199,63 @@ def extract_metadata_from_obj(obj, language: str, plugin_id_func: Callable | Non
     with translation.override(language):
         target_obj, fields = get_metadata_fields(obj)
 
-        plugin_id = plugin_id_func(target_obj) if plugin_id_func else get_plugin_id_for_metadata_obj(target_obj)
+        final_units = []
 
-        model_unit = partial(
-            Unit,
-            plugin_id=plugin_id,
-            plugin_type=target_obj._meta.object_name or "",
-            plugin_name=target_obj._meta.verbose_name or "",
-        )
-
-        units = []
         for field_name, field_verbose_name in fields.items():
-            target_obj_field = target_obj._meta.get_field(field_name)
-
-            if not is_field_to_translate(target_obj_field, target_obj):  # type: ignore
-                continue
-
-            source = target_obj_field.value_from_object(target_obj)
-            if not source:
-                continue
-
-            target_obj_field_type = type(target_obj_field)
-            if target_obj_field_type in FIELD_EXTRACTORS:
-                units.extend(
-                    FIELD_EXTRACTORS[target_obj_field_type](instance=target_obj, field=target_obj_field, source=source)
+            # The slug for PageContent is not on the content, we need to lookup the PageUrl model
+            if field_name == "slug" and type(obj) is PageContent:
+                units = extract_units_from_obj_by_field_name(
+                    obj=obj.page.get_url_obj(language),
+                    field_name=field_name,
+                    field_verbose_name=field_verbose_name,
+                    plugin_id_func=plugin_id_func,
                 )
             else:
-                units.append(
-                    model_unit(
-                        field_name=target_obj_field.name,
-                        field_type=get_type_with_path(target_obj_field),  # type: ignore
-                        field_verbose_name=field_verbose_name,
-                        source=target_obj_field.value_from_object(target_obj),
-                        max_length=target_obj_field.max_length,
-                    )
+                units = extract_units_from_obj_by_field_name(
+                    obj=target_obj,
+                    field_name=field_name,
+                    field_verbose_name=field_verbose_name,
+                    plugin_id_func=plugin_id_func,
                 )
-        return units
+
+            final_units.extend(units)
+
+        return final_units
+
+
+def extract_units_from_obj_by_field_name(
+    obj: XliffObj,
+    field_name: str,
+    field_verbose_name: str,
+    plugin_id_func: Callable | None = None,
+) -> list[Unit]:
+    plugin_id = plugin_id_func(obj) if plugin_id_func else get_plugin_id_for_metadata_obj(obj)
+
+    target_obj_field = obj._meta.get_field(field_name)
+
+    if not is_field_to_translate(target_obj_field, obj):  # type: ignore
+        return []
+
+    source = target_obj_field.value_from_object(obj)
+    if not source:
+        return []
+
+    target_obj_field_type = type(target_obj_field)
+    if target_obj_field_type in FIELD_EXTRACTORS:
+        return FIELD_EXTRACTORS[target_obj_field_type](instance=obj, field=target_obj_field, source=source)
+
+    return [
+        Unit(
+            plugin_id=plugin_id,
+            plugin_type=obj._meta.object_name or "",
+            plugin_name=obj._meta.verbose_name or "",
+            field_name=target_obj_field.name,
+            field_type=get_type_with_path(target_obj_field),  # type: ignore
+            field_verbose_name=field_verbose_name,
+            source=target_obj_field.value_from_object(obj),
+            max_length=target_obj_field.max_length,
+        )
+    ]
 
 
 def extract_extension_data_from_page(obj: XliffObj, language: str) -> list[Unit]:
@@ -275,7 +295,10 @@ def extract_extension_data_from_page(obj: XliffObj, language: str) -> list[Unit]
 
 
 def extract_units_from_obj(
-    obj: XliffObj, language: str, include_metadata=True, allow_empty_plugins=False
+    obj: XliffObj,
+    language: str,
+    include_metadata=True,
+    allow_empty_plugins=False,
 ) -> list[Unit]:
     plugin_units = []
 
@@ -287,7 +310,7 @@ def extract_units_from_obj(
         plugin_units.extend(extract_units_from_placeholder(placeholder, language))
 
     if not allow_empty_plugins and len(plugin_units) == 0:
-        raise XliffExportError(_("No plugins found. You need to copy plugins from an existing page"))
+        raise XliffExportError(gettext("No plugins found. You need to copy plugins from an existing page"))
 
     metadata_units = []
     if include_metadata:

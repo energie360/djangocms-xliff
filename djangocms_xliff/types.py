@@ -3,7 +3,7 @@ from typing import Any
 
 from cms.models import PageContent
 from django.db.models import Model
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext
 from djangocms_alias.models import AliasContent
 
 ExportContent = str
@@ -30,9 +30,9 @@ class Unit:
 
     @property
     def id(self):
-        from djangocms_xliff.settings import UNIT_ID_DELIMITER
+        from djangocms_xliff.utils import get_unit_id_format
 
-        return f"{self.plugin_id}{UNIT_ID_DELIMITER}{self.field_name}"
+        return get_unit_id_format(self.plugin_id, self.field_name)
 
     @property
     def notes(self) -> list[str | None]:
@@ -42,7 +42,7 @@ class Unit:
             self.field_verbose_name,
         ]
         if self.max_length:
-            notes.append(_("Max characters: %(max_length)d") % {"max_length": self.max_length})
+            notes.append(gettext("Max characters: %(max_length)d") % {"max_length": self.max_length})
         return notes
 
     @property
@@ -73,18 +73,17 @@ class XliffContext:
         return group_units_by_plugin_id(self.units)
 
     @property
-    def obj(self) -> XliffObj:
-        from djangocms_xliff.utils import get_obj
-
-        return get_obj(self.content_type_id, self.obj_id)
-
-    @property
     def tool_id(self) -> str:
-        from djangocms_xliff.settings import UNIT_ID_DELIMITER
+        from djangocms_xliff.utils import get_unit_id_format
 
-        return f"{self.content_type_id}{UNIT_ID_DELIMITER}{self.obj_id}"
+        return get_unit_id_format(self.content_type_id, self.obj_id)
 
     @classmethod
     def from_dict(cls, data: dict) -> "XliffContext":
         units = data.pop("units", [])
         return cls(**data, units=[Unit(**u) for u in units])
+
+    def get_obj(self) -> XliffObj:
+        from djangocms_xliff.utils import get_obj
+
+        return get_obj(self.content_type_id, self.obj_id)

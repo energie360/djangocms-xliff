@@ -3,7 +3,6 @@ from functools import partial
 import pytest
 from cms.api import create_page
 from cms.models import CMSPlugin, PageContent
-from django.contrib.contenttypes.models import ContentType
 
 from djangocms_xliff.exceptions import XliffImportError
 from djangocms_xliff.extractors import extract_units_from_obj
@@ -12,8 +11,9 @@ from djangocms_xliff.imports import (
     validate_page_with_xliff_context,
     validate_units_max_lengths,
 )
-from djangocms_xliff.settings import UNIT_ID_DELIMITER, UNIT_ID_METADATA_ID
+from djangocms_xliff.settings import UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
+from djangocms_xliff.utils import get_plugin_id_for_metadata_obj
 
 
 def get_character_length_test_units() -> list[Unit]:
@@ -119,15 +119,6 @@ def test_extract_and_save_xliff_context(
     assert main_plugin_2_updated.lead == main_plugin_2_target_text_lead  # type: ignore
 
 
-def field_name_format(field: str, content_type, obj) -> str:
-    infos = [
-        str(content_type.pk),
-        str(obj.pk),
-        field,
-    ]
-    return UNIT_ID_DELIMITER.join(infos)
-
-
 @pytest.mark.django_db
 def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
     language_to_translate = "de"
@@ -138,41 +129,42 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
     menu_title_target_text = "Menütitel übersetzt"
     meta_description_target_text = "Meta Beschreibung übersetzt"
 
+    title_obj = page_with_metadata.get_content_obj(language="en")
+    page_url = page_with_metadata.get_url_obj(language="en")
+
     page_unit = partial(
         Unit,
-        plugin_id=UNIT_ID_METADATA_ID,
+        plugin_id=get_plugin_id_for_metadata_obj(title_obj),
         plugin_type=UNIT_ID_METADATA_ID,
         plugin_name=UNIT_ID_METADATA_ID,
         field_type="django.db.models.fields.CharField",
     )
 
-    content_type = ContentType.objects.get_for_model(PageContent)
-    title_obj = page_with_metadata.get_content_obj(language="en")
-
     units = [
         page_unit(
-            field_name=field_name_format("title", content_type, title_obj),
+            field_name="title",
             source=title_obj.title,
             target=title_target_text,
             field_verbose_name="Title",
             max_length=255,
         ),
         page_unit(
-            field_name=field_name_format("slug", content_type, title_obj),
+            plugin_id=get_plugin_id_for_metadata_obj(page_url),
+            field_name="slug",
             source=title_obj.page_title,
             target=slug_target_text,
             field_verbose_name="Slug",
             max_length=255,
         ),
         page_unit(
-            field_name=field_name_format("menu_title", content_type, title_obj),
+            field_name="menu_title",
             source=title_obj.menu_title,
             target=menu_title_target_text,
             field_verbose_name="Menu Title",
             max_length=255,
         ),
         page_unit(
-            field_name=field_name_format("meta_description", content_type, title_obj),
+            field_name="meta_description",
             field_type="django.db.models.fields.TextField",
             source=title_obj.meta_description,
             target=meta_description_target_text,
@@ -197,3 +189,8 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
     assert updated_page_content.title == title_target_text
     assert updated_page_content.menu_title == menu_title_target_text
     assert updated_page_content.meta_description == meta_description_target_text
+
+    updated_page_url = updated_page_content.page.get_url_obj(language_to_translate)
+
+    assert updated_page_url is not None
+    assert updated_page_url.slug == slug_target_text

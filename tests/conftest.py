@@ -19,7 +19,7 @@ def get_page_placeholder(page: Page, slot: str, language: str):
 
 @pytest.fixture
 def create_xliff_page_context():
-    def _create_xliff_page_context(units, source_language="de", target_language="fr", obj_id=1, path="/test"):
+    def _create_xliff_page_context(units, source_language="de", target_language="fr", obj_id="1", path="/test"):
         return XliffContext(
             source_language=source_language,
             target_language=target_language,

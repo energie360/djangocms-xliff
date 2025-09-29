@@ -33,7 +33,7 @@ class Command(BaseCommand):
                         )
                     )
                     self.stdout.write(
-                        f"Path to page: {xliff_context.obj.get_absolute_url(xliff_context.target_language)}"  # type: ignore
+                        f"Path to page: {xliff_context.get_obj().get_absolute_url(xliff_context.target_language)}"  # type: ignore
                     )
                 else:
                     raise CommandError("Aborted.")

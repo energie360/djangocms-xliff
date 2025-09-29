@@ -8,13 +8,14 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext
 from django.views import View
 
 from djangocms_xliff.exceptions import XliffError
 from djangocms_xliff.exports import export_content_as_xliff
+from djangocms_xliff.extractors import extract_units_from_obj
 from djangocms_xliff.forms import ExportForm, UploadFileForm
-from djangocms_xliff.imports import save_xliff_context, validate_xliff
+from djangocms_xliff.imports import compare_units, save_xliff_context, validate_xliff
 from djangocms_xliff.parsers import parse_xliff_document
 from djangocms_xliff.settings import (
     TEMPLATES_FOLDER,
@@ -69,25 +70,22 @@ class ExportView(XliffView):
 
     def render_template(self, form: Form, current_language: str):
         lead_params = {"language": get_lang_name(current_language)}
-        lead = _('Export the content of the currently selected language "%(language)s".') % lead_params
+        lead = gettext('Export the content of the currently selected language "%(language)s".')
 
-        line1_params = {"import_from": _("Import from XLIFF")}
-        line1 = (
-            _('Translate this file in your preferred XLIFF tool and import later on with "%(import_from)s".')
-            % line1_params
-        )
+        line1_params = {"import_from": gettext("Import from XLIFF")}
+        line1 = gettext('Translate this file in your preferred XLIFF tool and import later on with "%(import_from)s".')
 
         context = {
-            "title": _("Export"),
+            "title": gettext("Export"),
             "form": form,
-            "lead": lead,
-            "line1": line1,
-            "line2": _("You can only import the exact file and language you've exported."),
-            "line3": _(
+            "lead": lead % lead_params,
+            "line1": line1 % line1_params,
+            "line2": gettext("You can only import the exact file and language you've exported."),
+            "line3": gettext(
                 "First create the page to be translated in the new language, "
                 "copy the plugins and only then create an export."
             ),
-            "button_label": _("Download"),
+            "button_label": gettext("Download"),
         }
         return render(self.request, self.template, context)
 
@@ -109,41 +107,59 @@ class UploadView(XliffView):
 
         try:
             uploaded_file = form.cleaned_data["file"]
+            uploaded_file_name = uploaded_file.name
             xliff_context = parse_xliff_document(uploaded_file)
 
-            validate_xliff(xliff_context, current_language)
+            obj = get_obj(int(content_type_id), int(obj_id))
 
-            return self.render_template_success(uploaded_file.name, xliff_context)
+            units_to_import = xliff_context.units
+            units_from_database = extract_units_from_obj(obj, xliff_context.target_language)
+
+            validate_xliff(obj, xliff_context, current_language)
+
+            final_units = compare_units(units_to_import, units_from_database)
+            if len(final_units) == 0:
+                return self.error_response(
+                    gettext('No plugins found to import from file: "%(file_name)s"')
+                    % {
+                        "file_name": uploaded_file_name,
+                    }
+                )
+
+            xliff_context.units = final_units
+
+            return self.render_template_success(uploaded_file_name, xliff_context)
         except XliffError as e:
             return self.error_response(e)
 
     def render_template(self, form: Form, current_language: str):
         lead_params = {"language": get_lang_name(current_language)}
         context = {
-            "title": _("Import"),
-            "lead": _('Import the translation for the "%(language)s" page.') % lead_params,
-            "description": _("You can only import to the same page and language you exported from."),
+            "title": gettext("Import"),
+            "lead": gettext('Import the translation for the "%(language)s" page.') % lead_params,
+            "description": gettext("You can only import to the same page and language you exported from."),
             "form": form,
-            "button_label": _("Preview"),
+            "button_label": gettext("Preview"),
         }
         return render(self.request, self.template, context)
 
     def render_template_success(self, file_name: str, xliff_context: XliffContext):
         description_params = {
             "language": get_lang_name(xliff_context.target_language),
+            "file_name": file_name,
             "count_plugins": len(xliff_context.units),
         }
-        description = (
-            _('Found %(count_plugins)d plugins that will be imported to the "%(language)s" page.') % description_params
+        description = gettext(
+            'Found %(count_plugins)d plugins in "%(file_name)s" that will be imported to the "%(language)s" page.'
         )
 
-        note = _(
+        note = gettext(
             "Please note that complex types, images, media and links are not part of the translation "
             "process and have to be translated manually."
         )
 
         context = {
-            "description": description,
+            "description": description % description_params,
             "note": note,
             "action_url": reverse(
                 "djangocms_xliff:import",

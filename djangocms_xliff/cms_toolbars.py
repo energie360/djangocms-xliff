@@ -7,7 +7,7 @@ from cms.toolbar_pool import toolbar_pool
 from cms.utils import page_permissions
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext
 
 XLIFF_NAMESPACE = "djangocms_xliff"
 XLIFF_LANGUAGE_BREAK = "Export XLIFF Break"
@@ -43,11 +43,11 @@ class XliffToolbar(CMSToolbar):
 
         language_menu.add_break(XLIFF_LANGUAGE_BREAK)
         language_menu.add_modal_item(
-            _("Export as XLIFF"),
+            gettext("Export as XLIFF"),
             reverse_xliff(viewname="djangocms_xliff:export"),
         )
         language_menu.add_modal_item(
-            _("Import from XLIFF"),
+            gettext("Import from XLIFF"),
             reverse_xliff(viewname="djangocms_xliff:upload"),
         )
 

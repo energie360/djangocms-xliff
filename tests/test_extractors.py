@@ -7,11 +7,12 @@ from djangocms_xliff.extractors import (
     extract_extension_data_from_page,
     extract_metadata_from_obj,
     extract_units_from_obj,
+    extract_units_from_obj_by_field_name,
     extract_units_from_placeholder,
     extract_units_from_plugin,
     extract_units_from_plugin_instance,
 )
-from djangocms_xliff.settings import PAGE_CONTENT_METADATA_FIELDS
+from djangocms_xliff.settings import METADATA_FIELDS
 from djangocms_xliff.types import Unit
 from djangocms_xliff.utils import get_plugin_id_for_extension_obj, get_plugin_id_for_metadata_obj, get_type_with_path
 from tests.conftest import get_page_placeholder
@@ -249,8 +250,11 @@ def test_extract_metadata_units_form_page(page_with_metadata):
     computed = extract_metadata_from_obj(obj=title_obj, language=language)
 
     expected = []
-    fields = PAGE_CONTENT_METADATA_FIELDS
-    for field_name, field_verbose_name in fields.items():
+
+    for field_name, field_verbose_name in METADATA_FIELDS.items():
+        if field_name == "slug":
+            continue
+
         field = title_obj._meta.get_field(field_name)
         expected.append(
             page_unit(
@@ -262,6 +266,15 @@ def test_extract_metadata_units_form_page(page_with_metadata):
                 field_type=get_type_with_path(field),
             )
         )
+
+    expected.extend(
+        extract_units_from_obj_by_field_name(
+            obj=page_with_metadata.get_url_obj(language),
+            field_name="slug",
+            field_verbose_name="Slug",
+        )
+    )
+
     assert computed == expected
 
 

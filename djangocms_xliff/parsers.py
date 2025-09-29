@@ -1,11 +1,10 @@
 import abc
-from html import unescape
 from typing import TYPE_CHECKING
 
 from cms.models import Page
 from defusedxml.ElementTree import ParseError, parse
 from django.contrib.contenttypes.models import ContentType
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext
 
 from djangocms_xliff.exceptions import XliffConfigurationError, XliffError
 from djangocms_xliff.settings import UNIT_ID_DELIMITER, XliffVersion
@@ -76,7 +75,7 @@ class Version12(VersionParser):
         units = []
         for trans_unit in self.body_element.findall("trans-unit", namespaces=self.xml_namespaces):
             unit_id = trans_unit.attrib["id"]
-            plugin_id, field_name = unit_id.split(UNIT_ID_DELIMITER, 1)
+            plugin_id, field_name = unit_id.rsplit(UNIT_ID_DELIMITER, 1)
 
             field_type = trans_unit.attrib["extype"]
 
@@ -90,8 +89,8 @@ class Version12(VersionParser):
             if target_element is None:
                 raise XliffError("XLIFF Error: Missing <target> in <trans-unit>")
 
-            source = unescape(source_element.text if source_element.text else "")
-            target = unescape(target_element.text if target_element.text else source)
+            source = source_element.text if source_element.text else ""
+            target = target_element.text if target_element.text else source
 
             notes = trans_unit.iterfind("note", namespaces=self.xml_namespaces)
             plugin_type = next(notes).text
@@ -131,7 +130,7 @@ def parse_xliff_document(file) -> XliffContext:
     try:
         doc = parse(file)
     except ParseError as e:
-        raise XliffError(_("Invalid xml")) from e
+        raise XliffError(gettext("Invalid xml")) from e
 
     xliff_element = doc.getroot()
 

@@ -226,9 +226,9 @@ DJANGOCMS_XLIFF_MODEL_FOR_ALIAS_CONTENT = "your_module.xliff.get_model_for_alias
 
 
 # The signature of the path function must be the following:
-def get_model_for_alias_content(content: AliasContent):
-    if hasattr(content.alias, "magazine_article"):
-        return content.alias.magazine_article
+def get_model_for_alias_content(alias):
+    if hasattr(alias, "magazine_article"):
+        return alias.magazine_article
     return None
 ```
 
