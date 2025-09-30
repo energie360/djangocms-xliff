@@ -10,14 +10,14 @@ the file at the end of the translation process.
 
 ## Migration to django-cms 5
 
-If you are using djangocms-xliff with django-cms with version 3 or lower use the v1 release of this package:
+If you are using djangocms-xliff with django-cms version 3 or lower use the v1 release of this package:
 ```shell
 pip install djangocms-xliff==1.*.*
 ```
 
-*We are not planning to support this package for django-cms 3 or lower*
+*We are not planning to support this package for django-cms version 3 or lower*
 
-Please upgrade to a v2 release if you are using django-cms 4 or higher
+Please upgrade to a v2 release if you are using django-cms version 4 or higher
 
 ## Installation
 
