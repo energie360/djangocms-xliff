@@ -2,7 +2,7 @@ from enum import Enum, unique
 
 from django.conf import settings
 from django.utils.module_loading import import_string
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy
 
 
 @unique
@@ -17,6 +17,7 @@ UNIT_ID_METADATA_ID = "METADATA"
 UNIT_ID_EXTENSION_DATA_ID = "EXTENSION"
 
 TEMPLATES_FOLDER = "djangocms_xliff"
+TEMPLATES_FOLDER_ADMIN = f"{TEMPLATES_FOLDER}/admin/xliff"
 TEMPLATES_FOLDER_EXPORT = f"{TEMPLATES_FOLDER}/export"
 TEMPLATES_FOLDER_IMPORT = f"{TEMPLATES_FOLDER}/import"
 
@@ -36,15 +37,20 @@ VALIDATORS = [
     import_string(validator_callable) for validator_callable in getattr(settings, "DJANGOCMS_XLIFF_VALIDATORS", ())
 ]
 
-TITLE_METADATA_FIELDS = {
-    "title": _("Title"),
-    "slug": _("Slug"),
-    "menu_title": _("Menu Title"),
-    "page_title": _("Page Title"),
-    "meta_description": _("Description meta tag"),
+METADATA_FIELDS = {
+    "title": gettext_lazy("Title"),
+    "page_title": gettext_lazy("Page Title"),
+    "meta_description": gettext_lazy("Description meta tag"),
+    "menu_title": gettext_lazy("Menu Title"),
+    "slug": gettext_lazy("Slug"),
 }
+
+PAGE_URL_FIELDS = {"slug"}
 
 MODEL_METADATA_FIELDS = {
     import_string(model_class): config
     for model_class, config in getattr(settings, "DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS", {}).items()
 }
+
+MODEL_FOR_ALIAS_CONTENT = getattr(settings, "DJANGOCMS_XLIFF_MODEL_FOR_ALIAS_CONTENT", "")
+get_model_for_alias_content = import_string(MODEL_FOR_ALIAS_CONTENT) if MODEL_FOR_ALIAS_CONTENT else None

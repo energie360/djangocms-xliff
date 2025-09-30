@@ -8,6 +8,17 @@ to standardize the way localizable data are passed between and among tools durin
 With djangocms-xliff it is possible to export all text objects from a page into an XLIFF-compatible file and re-import
 the file at the end of the translation process.
 
+## Migration to django-cms 5
+
+If you are using djangocms-xliff with django-cms version 3 or lower use the v1 release of this package:
+```shell
+pip install djangocms-xliff==1.*.*
+```
+
+*We are not planning to support this package for django-cms version 3 or lower*
+
+Please upgrade to a v2 release if you are using django-cms version 4 or higher
+
 ## Installation
 
 Before the installation you need to make sure, that your
@@ -180,32 +191,51 @@ def is_not_background(field: django.db.models.Field, instance: CMSPlugin) -> boo
 
 ## Placeholders Outside the CMS
 
-Add a toolbar for your own Django model:
+This package does not handle translatability at database level. There are various packages for that. We recommend the
+use of `django-modeltranslation`. Because this way import and export of XLIFF works out-of-the-box.
+
+You can import / export any django model with this package. In your admin.py add the following code:
 
 ```python
-from cms.toolbar_pool import toolbar_pool
-from djangocms_xliff.cms_toolbars import XliffModelToolbar
+from django.contrib import admin
+from djangocms_xliff.admin import XliffImportExportMixin
 
 from magazine.models import Article
 
 
-@toolbar_pool.register
-class ArticleXliffToolbar(XliffModelToolbar):
+@admin.register(Article)
+class ArticleAdmin(XliffImportExportMixin, admin.ModelAdmin):
     pass
-
 ```
 
-This package does not handle translatability at database level. There are various packages for that. We recommend the
-use of django-modeltranslation. Because this way import and export of XLIFF works out-of-the-box.
+You can customize the fields that are exported with the following configuration:
 
 ```python
-# By default all fields on a model get exported. You can exclude fields like this:
+# By default djangocms_xliff.settings.METADATA_FIELDS fields get exported. You can include and exclude fields like this:
 DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS = {
     'magazine.models.Article': {
+        "include": {
+            "lead": _("Lead"),
+        },
         'exclude': ["slug", "og_title", "og_description"]
     }
 }
 ```
+
+If you have a custom alias content in your app, you need to set the following setting variable:
+
+```python
+DJANGOCMS_XLIFF_MODEL_FOR_ALIAS_CONTENT = "your_module.xliff.get_model_for_alias_content"
+
+
+# The signature of the path function must be the following:
+def get_model_for_alias_content(alias):
+    if hasattr(alias, "magazine_article"):
+        return alias.magazine_article
+    return None
+```
+
+You need to make sure that the your model has a `get_absolute_url(language: str)` method for everything to work.
 
 ## Contribute
 

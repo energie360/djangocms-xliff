@@ -1,12 +1,12 @@
 from django import forms
 from django.conf import settings
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy
 
 
 class ExportForm(forms.Form):
     source_language = forms.ChoiceField(
-        label=_("Source language in XLIFF header:"),
-        help_text=_(
+        label=gettext_lazy("Source language in XLIFF header:"),
+        help_text=gettext_lazy(
             "The source language is usually the main language of the project. "
             "It serves as an orientation for the translator in the XLIFF tool."
         ),
@@ -20,4 +20,4 @@ class ExportForm(forms.Form):
 
 
 class UploadFileForm(forms.Form):
-    file = forms.FileField(label=_("File to import"))
+    file = forms.FileField(label=gettext_lazy("File to import"))

@@ -11,6 +11,9 @@ LANGUAGES = [
 ]
 
 CMS_TEMPLATES = (("testing.html", "Testing"),)
+CMS_CONFIRM_VERSION4 = True
+
+USE_TZ = True
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -46,6 +49,7 @@ INSTALLED_APPS = [
     "menus",
     "sekizai",
     "cms",
+    "djangocms_alias",
     "tests",
     "djangocms_xliff",
 ]

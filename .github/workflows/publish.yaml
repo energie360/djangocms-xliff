@@ -3,30 +3,23 @@ name: Publish to PyPI
 on:
   release:
     types: [ published ]
-    branches: [ main ]
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
-      - name: Install poetry and dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install poetry
+      - name: Install Python 3.13
+        run: uv python install 3.13
 
-      - name: Configure poetry
-        env:
-          pypi_token: ${{ secrets.PYPI_TOKEN }}
-        run: poetry config pypi-token.pypi $pypi_token
+      - name: Build
+        run: uv build
 
-      - name: Build and publish
-        run: poetry publish --build
+      - name: Publish
+        run: uv publish

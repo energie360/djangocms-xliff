@@ -46,4 +46,4 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS(f"Successfully exported xliff file: {exported_file.resolve()}"))
         except XliffError as e:
-            raise CommandError(e)
+            raise CommandError(e) from e

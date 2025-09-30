@@ -1,0 +1,30 @@
+{% extends "admin/custom_admin_base.html" %}
+
+{% load i18n admin_urls %}
+
+{% block breadcrumbs_last %}
+    {% translate "XLIFF" %}
+{% endblock %}
+
+{% block content %}
+    <fieldset class="module aligned">
+        <h2>{% trans "Export" %}</h2>
+        <p>{% trans "The export takes the admin filters into account. If you want to filter out some rows, you can set them if you go a page back." %}</p>
+        <form action="" method="POST">
+            {% csrf_token %}
+            {% include "djangocms_xliff/admin/xliff/form_fields.html" with form=export_form %}
+            <div class="submit-row">
+                <input type="submit" class="default" value="{% trans "Submit" %}">
+            </div>
+        </form>
+        <br>
+        <h2>{% trans "Import" %}</h2>
+        <form enctype="multipart/form-data" action="" method="POST">
+            {% csrf_token %}
+            {% include "djangocms_xliff/admin/xliff/form_fields.html" with form=import_form %}
+            <div class="submit-row">
+                <input type="submit" class="default" value="{% trans "Submit" %}">
+            </div>
+        </form>
+    </fieldset>
+{% endblock %}

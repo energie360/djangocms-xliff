@@ -1,5 +1,5 @@
 # mypy: ignore-errors
-from cms.extensions import PageExtension, TitleExtension, extension_pool
+from cms.extensions import PageContentExtension, PageExtension, extension_pool
 from cms.models import CMSPlugin, StaticPlaceholder
 from django.db import models
 from django.db.models import PROTECT, Model, OneToOneField
@@ -8,7 +8,7 @@ from django.db.models import PROTECT, Model, OneToOneField
 class TestOneFieldModel(CMSPlugin):
     body = models.CharField(max_length=100, verbose_name="Body")
 
-    class Meta:
+    class Meta:  # type: ignore
         verbose_name = "Test one field model"
 
 
@@ -18,21 +18,21 @@ class TestMultipleFieldsModel(CMSPlugin):
     amount = models.IntegerField(verbose_name="Anzahl")
     is_good = models.BooleanField(verbose_name="All good")
 
-    class Meta:
+    class Meta:  # type: ignore
         verbose_name = "Test multiple fields model "
 
 
 class TestParentModel(CMSPlugin):
     body = models.CharField(max_length=100, verbose_name="Body")
 
-    class Meta:
+    class Meta:  # type: ignore
         verbose_name = "Test Parent Model"
 
 
 class TestChildModel(CMSPlugin):
     title = models.CharField(max_length=200, verbose_name="Title")
 
-    class Meta:
+    class Meta:  # type: ignore
         verbose_name = "Test Child Model"
 
 
@@ -53,7 +53,7 @@ class TestPageExtension(PageExtension):
 extension_pool.register(TestPageExtension)
 
 
-class TestTitleExtension(TitleExtension):
+class TestTitleExtension(PageContentExtension):
     title = models.CharField(max_length=100, verbose_name="Title")
 
 
