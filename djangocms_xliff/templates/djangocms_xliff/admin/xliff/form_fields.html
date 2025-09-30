@@ -1,0 +1,16 @@
+{% load i18n %}
+
+{% for field in form %}
+    {% if field.is_hidden %}
+        {{ field }}
+    {% else %}
+        <div class="form-row">
+            {{ field.errors }}
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.field.help_text %}
+                <p class="help">{{ field.field.help_text|safe }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endfor %}

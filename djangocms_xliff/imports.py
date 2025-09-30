@@ -28,7 +28,7 @@ def save_xliff_units_for_metadata(units: list[Unit], target_language: str) -> No
     with translation.override(target_language):
         for unit in units:
             _, content_type_id, instance_id = unit.plugin_id.split(UNIT_ID_DELIMITER)
-            obj = get_obj(int(content_type_id), int(instance_id))
+            obj = get_obj(int(content_type_id), instance_id)
 
             if type(obj) is PageUrl and unit.field_name == "slug":
                 # Slug is not on the PageContent so we need to handle it differently

@@ -188,7 +188,7 @@ def get_metadata_fields(obj: XliffObj) -> tuple[XliffObj, dict]:
 
     model_metadata_fields = MODEL_METADATA_FIELDS.get(type(target_obj), {})
     if model_metadata_fields:
-        included_fields = model_metadata_fields.get("include", [])
+        included_fields = model_metadata_fields.get("include", {})
         for included_field, included_field_verbose_name in included_fields.items():
             fields[included_field] = included_field_verbose_name
 

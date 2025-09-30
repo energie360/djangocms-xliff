@@ -1,0 +1,9 @@
+{% extends "admin/custom_admin_base.html" %}
+
+{% load i18n admin_urls %}
+
+{% block content %}
+    <p style="color: red !important;">{{ message }}</p>
+    <br>
+    <a href="{% url opts|admin_urlname:'xliff_overview' %}" class="import_link">{% trans "Back to XLIFF" %}</a>
+{% endblock %}

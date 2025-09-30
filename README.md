@@ -191,26 +191,27 @@ def is_not_background(field: django.db.models.Field, instance: CMSPlugin) -> boo
 
 ## Placeholders Outside the CMS
 
-Add a toolbar for your own Django model:
+This package does not handle translatability at database level. There are various packages for that. We recommend the
+use of `django-modeltranslation`. Because this way import and export of XLIFF works out-of-the-box.
+
+You can import / export any django model with this package. In your admin.py add the following code:
 
 ```python
-from cms.toolbar_pool import toolbar_pool
-from djangocms_xliff.cms_toolbars import XliffModelToolbar
+from django.contrib import admin
+from djangocms_xliff.admin import XliffImportExportMixin
 
 from magazine.models import Article
 
 
-@toolbar_pool.register
-class ArticleXliffToolbar(XliffModelToolbar):
+@admin.register(Article)
+class ArticleAdmin(XliffImportExportMixin, admin.ModelAdmin):
     pass
-
 ```
 
-This package does not handle translatability at database level. There are various packages for that. We recommend the
-use of django-modeltranslation. Because this way import and export of XLIFF works out-of-the-box.
+You can customize the fields that are exported with the following configuration:
 
 ```python
-# By default all fields on a model get exported. You can include and exclude fields like this:
+# By default djangocms_xliff.settings.METADATA_FIELDS fields get exported. You can include and exclude fields like this:
 DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS = {
     'magazine.models.Article': {
         "include": {
@@ -221,8 +222,7 @@ DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS = {
 }
 ```
 
-If you have a custom alias content in your app, you need set the following setting variable.
-You need to make sure that the model has a `get_absolute_url(language: str)` method
+If you have a custom alias content in your app, you need to set the following setting variable:
 
 ```python
 DJANGOCMS_XLIFF_MODEL_FOR_ALIAS_CONTENT = "your_module.xliff.get_model_for_alias_content"
@@ -234,6 +234,8 @@ def get_model_for_alias_content(alias):
         return alias.magazine_article
     return None
 ```
+
+You need to make sure that the your model has a `get_absolute_url(language: str)` method for everything to work.
 
 ## Contribute
 
