@@ -29,7 +29,7 @@ classifiers = [
 dependencies = [
     "Django>=3.2,<6.0",
     "django-cms>=5.0",
-    "djangocms-alias>=3.0",
+    "djangocms-alias>=2.0",
     "defusedxml>=0.7",
 ]
 
