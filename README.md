@@ -210,9 +210,12 @@ This package does not handle translatability at database level. There are variou
 use of django-modeltranslation. Because this way import and export of XLIFF works out-of-the-box.
 
 ```python
-# By default all fields on a model get exported. You can exclude fields like this:
+# By default all fields on a model get exported. You can include and exclude fields like this:
 DJANGOCMS_XLIFF_MODEL_METADATA_FIELDS = {
     'magazine.models.Article': {
+        "include": {
+            "lead": _("Lead"),
+        },
         'exclude': ["slug", "og_title", "og_description"]
     }
 }

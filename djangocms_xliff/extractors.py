@@ -49,7 +49,7 @@ def has_translatable_type(field: Field) -> bool:
 
 
 def is_not_cms_default(name: str) -> bool:
-    return name not in ["language", "path", "plugin_type"]
+    return name not in ["language", "path", "plugin_type", "rte"]
 
 
 def has_no_choices(field: Field) -> bool:
@@ -173,13 +173,11 @@ def get_placeholders(obj: XliffObj):
 
 
 def get_metadata_fields(obj: XliffObj) -> tuple[XliffObj, dict]:
-    obj_type = type(obj)
-
     target_obj = obj
 
-    if obj_type is PageContent:
+    if type(obj) is PageContent:
         fields = METADATA_FIELDS
-    elif obj_type is AliasContent:
+    elif type(obj) is AliasContent:
         fields = METADATA_FIELDS
         target_obj = must_get_model_for_alias_content(obj)  # type: ignore
     else:
@@ -188,9 +186,15 @@ def get_metadata_fields(obj: XliffObj) -> tuple[XliffObj, dict]:
     if target_obj is None:
         raise XliffExportError(gettext(f"Did not find metadata for obj: {type(obj)}"))
 
-    excluded_fields = MODEL_METADATA_FIELDS.get(obj_type, {}).get("exclude", [])
-    for excluded_field in excluded_fields:
-        fields.pop(excluded_field, None)
+    model_metadata_fields = MODEL_METADATA_FIELDS.get(type(target_obj), {})
+    if model_metadata_fields:
+        included_fields = model_metadata_fields.get("include", [])
+        for included_field, included_field_verbose_name in included_fields.items():
+            fields[included_field] = included_field_verbose_name
+
+        excluded_fields = model_metadata_fields.get("exclude", [])
+        for excluded_field in excluded_fields:
+            fields.pop(excluded_field, None)
 
     return target_obj, fields
 
