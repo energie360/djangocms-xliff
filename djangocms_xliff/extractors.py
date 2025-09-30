@@ -11,7 +11,8 @@ from cms.models import (
     PlaceholderRelationField,
     StaticPlaceholder,
 )
-from cms.utils.placeholder import get_declared_placeholders_for_obj
+from cms.templatetags.cms_tags import DeclaredPlaceholder
+from cms.utils.placeholder import get_declared_placeholders_for_obj as _get_declared_placeholders_for_obj_original
 from django.db.models import (
     CharField,
     Field,
@@ -124,6 +125,15 @@ def extract_units_from_placeholder(placeholder: Placeholder, language: str) -> l
         logger.debug(f"Plugin: {cms_plugin.pk}, type={cms_plugin.plugin_type}")
         units += extract_units_from_plugin(cms_plugin)
     return units
+
+
+def get_declared_placeholders_for_obj(obj: XliffObj) -> list[DeclaredPlaceholder]:
+    from cms.templatetags.cms_tags import DeclaredPlaceholder
+
+    if isinstance(obj, AliasContent):
+        return [DeclaredPlaceholder(slot=obj.name, inherit=False)]
+
+    return _get_declared_placeholders_for_obj_original(obj=obj)
 
 
 def get_page_content_placeholders(page_content: PageContent) -> Generator[Placeholder]:
