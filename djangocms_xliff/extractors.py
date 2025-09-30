@@ -176,9 +176,9 @@ def get_metadata_fields(obj: XliffObj) -> tuple[XliffObj, dict]:
     target_obj = obj
 
     if type(obj) is PageContent:
-        fields = METADATA_FIELDS
+        fields = METADATA_FIELDS.copy()
     elif type(obj) is AliasContent:
-        fields = METADATA_FIELDS
+        fields = METADATA_FIELDS.copy()
         target_obj = must_get_model_for_alias_content(obj)  # type: ignore
     else:
         fields = {f.name: f.verbose_name for f in obj._meta.fields}
