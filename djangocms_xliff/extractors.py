@@ -274,7 +274,6 @@ def extract_units_from_obj_by_field_name(
 
 def extract_extension_data_from_page(obj: XliffObj, language: str) -> list[Unit]:
     obj = cast(PageContent, obj)
-    page = obj.page
 
     with translation.override(language):
         units = []
@@ -282,7 +281,7 @@ def extract_extension_data_from_page(obj: XliffObj, language: str) -> list[Unit]
         for title_extension_class in title_extensions:
             with suppress(title_extension_class.DoesNotExist):
                 instance = title_extension_class.objects.get(
-                    extended_object__page=page,
+                    extended_object__id=obj.pk,
                     extended_object__language=language,
                 )
                 units.extend(
@@ -296,7 +295,7 @@ def extract_extension_data_from_page(obj: XliffObj, language: str) -> list[Unit]
         # In rare cases it makes sense to use translated fields on page extensions
         for page_extension_class in extension_pool.page_extensions:
             with suppress(page_extension_class.DoesNotExist):
-                instance = page_extension_class.objects.get(extended_object=page)
+                instance = page_extension_class.objects.get(extended_object=obj.page)
                 units.extend(
                     extract_metadata_from_obj(
                         obj=instance,
