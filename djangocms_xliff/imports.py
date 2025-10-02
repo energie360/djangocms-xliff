@@ -1,7 +1,6 @@
 import logging
 
 from cms.models import CMSPlugin, PageUrl
-from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
 from django.utils.translation import gettext
 from djangocms_alias.models import AliasContent
@@ -107,29 +106,55 @@ def validate_units_max_lengths(units: list[Unit]):
             raise XliffImportError(error_message % error_params)
 
 
-def validate_tool_id(obj: XliffObj, xliff_context: XliffContext) -> None:
-    content_type_id = ContentType.objects.get_for_model(obj).pk
-    obj_id = obj.pk
-
-    if content_type_id != xliff_context.content_type_id and obj_id != xliff_context.obj_id:
-        error_message = gettext(
-            "Current page with content type id: %(content_type_id)s and obj id: %(obj_id)s is not the same as "
-            "xliff content type id: %(xliff_content_type_id)s and obj id: %(xliff_obj_id)s. "
-            "You can only import to the same page you exported from."
+def validate_current_obj(current_obj: XliffObj, xliff_obj: XliffObj) -> None:
+    if type(current_obj) is not type(xliff_obj):
+        raise XliffImportError(
+            gettext(
+                "The XLIFF file was exported from a different type of object. "
+                'Expected type "%(expected_type)s", got "%(actual_type)s".'
+            )
+            % {
+                "expected_type": type(current_obj).__name__,
+                "actual_type": type(xliff_obj).__name__,
+            }
         )
-        error_params = {
-            "content_type_id": content_type_id,
-            "obj_id": obj_id,
-            "xliff_content_type_id": xliff_context.content_type_id,
-            "xliff_obj_id": xliff_context.obj_id,
-        }
-        raise XliffImportError(error_message % error_params)
+
+    error_message = gettext(
+        "The XLIFF file was exported from a different page. "
+        "Please make sure to import the XLIFF file from the same page it was exported from."
+    )
+    try:
+        """
+        If djangocms-versioning is installed, we can check if the xliff obj is a version of the current obj
+        """
+        from djangocms_versioning.models import Version  # type: ignore
+
+        version = xliff_obj.versions.last()  # type: ignore
+
+        is_xliff_obj_in_current_obj_versions = (
+            Version.objects.filter_by_content_grouping_values(current_obj)
+            .order_by("-pk")
+            .filter(pk=version.pk)
+            .exists()
+        )
+
+        if not is_xliff_obj_in_current_obj_versions:
+            raise XliffImportError(error_message)
+    except ImportError as e:
+        # We have no versioning, so we check if the primary keys are the same
+        if current_obj.pk != xliff_obj.pk:
+            raise XliffImportError(error_message) from e
 
 
-def validate_xliff(obj: XliffObj, xliff_context: XliffContext, current_language: str) -> None:
+def validate_xliff(
+    current_obj: XliffObj,
+    xliff_obj: XliffObj,
+    xliff_context: XliffContext,
+    current_language: str,
+) -> None:
+    validate_current_obj(current_obj, xliff_obj)
     validate_units_max_lengths(xliff_context.units)
     validate_page_with_xliff_context(xliff_context, current_language)
-    validate_tool_id(obj, xliff_context)
 
 
 def compare_units(

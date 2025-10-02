@@ -43,10 +43,10 @@ $ uv run tox
 
 ```shell
 # Generate .po files to translate in a language
-django-admin makemessages --locale <language_code>
+uv run django-admin makemessages --locale <language_code>
 
 # Compile .po into .mo
-django-admin compilemessages --ignore .tox
+uv run django-admin compilemessages --ignore .tox --ignore .venv
 ```
 
 11. Create the pull request

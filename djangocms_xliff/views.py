@@ -13,17 +13,16 @@ from django.views import View
 
 from djangocms_xliff.exceptions import XliffError
 from djangocms_xliff.exports import export_content_as_xliff
-from djangocms_xliff.extractors import extract_units_from_obj
 from djangocms_xliff.forms import ExportForm, UploadFileForm
-from djangocms_xliff.imports import compare_units, save_xliff_context, validate_xliff
+from djangocms_xliff.imports import save_xliff_context, validate_xliff
 from djangocms_xliff.parsers import parse_xliff_document
 from djangocms_xliff.settings import (
     TEMPLATES_FOLDER,
     TEMPLATES_FOLDER_EXPORT,
     TEMPLATES_FOLDER_IMPORT,
 )
-from djangocms_xliff.types import XliffContext
-from djangocms_xliff.utils import get_lang_name, get_obj
+from djangocms_xliff.types import XliffContext, XliffObj
+from djangocms_xliff.utils import get_lang_name, get_latest_obj_by_version, get_obj
 
 
 class XliffView(View):
@@ -110,25 +109,19 @@ class UploadView(XliffView):
             uploaded_file_name = uploaded_file.name
             xliff_context = parse_xliff_document(uploaded_file)
 
-            obj = get_obj(int(content_type_id), int(obj_id))
+            current_obj = get_obj(content_type_id, obj_id)
+            xliff_obj = xliff_context.get_obj()
 
-            units_to_import = xliff_context.units
-            units_from_database = extract_units_from_obj(obj, xliff_context.target_language)
+            validate_xliff(current_obj, xliff_obj, xliff_context, current_language)
 
-            validate_xliff(obj, xliff_context, current_language)
+            latest_xliff_obj = get_latest_obj_by_version(xliff_obj, current_language)
 
-            final_units = compare_units(units_to_import, units_from_database)
-            if len(final_units) == 0:
-                return self.error_response(
-                    gettext('No plugins found to import from file: "%(file_name)s"')
-                    % {
-                        "file_name": uploaded_file_name,
-                    }
-                )
-
-            xliff_context.units = final_units
-
-            return self.render_template_success(uploaded_file_name, xliff_context)
+            return self.render_template_success(
+                file_name=uploaded_file_name,
+                xliff_context=xliff_context,
+                xliff_obj=xliff_obj,
+                current_obj=latest_xliff_obj,
+            )
         except XliffError as e:
             return self.error_response(e)
 
@@ -143,7 +136,27 @@ class UploadView(XliffView):
         }
         return render(self.request, self.template, context)
 
-    def render_template_success(self, file_name: str, xliff_context: XliffContext):
+    def get_old_version_hint(self, xliff_obj: XliffObj, current_obj: XliffObj) -> str:
+        if xliff_obj.pk == current_obj.pk:
+            return ""
+
+        if not hasattr(xliff_obj, "versions"):
+            return ""
+
+        old_version = xliff_obj.versions.last()  # type: ignore
+        if not old_version:
+            return ""
+
+        return gettext(
+            "The XLIFF file was exported from an older version of this page. "
+            "The import will update the old version '%(old_version)s'. You are currently editing a newer version. "
+            "If you need the translated content, make sure to revert to the old version "
+            "or create a new xliff export from the current version."
+        ) % {
+            "old_version": old_version.short_name(),
+        }
+
+    def get_description(self, file_name: str, xliff_context: XliffContext) -> str:
         description_params = {
             "language": get_lang_name(xliff_context.target_language),
             "file_name": file_name,
@@ -152,6 +165,18 @@ class UploadView(XliffView):
         description = gettext(
             'Found %(count_plugins)d plugins in "%(file_name)s" that will be imported to the "%(language)s" page.'
         )
+        return description % description_params
+
+    def render_template_success(
+        self,
+        file_name: str,
+        xliff_context: XliffContext,
+        xliff_obj: XliffObj,
+        current_obj: XliffObj,
+    ):
+        description = self.get_description(file_name, xliff_context)
+
+        old_version_hint = self.get_old_version_hint(xliff_obj, current_obj)
 
         note = gettext(
             "Please note that complex types, images, media and links are not part of the translation "
@@ -159,7 +184,8 @@ class UploadView(XliffView):
         )
 
         context = {
-            "description": description % description_params,
+            "old_version_hint": old_version_hint,
+            "description": description,
             "note": note,
             "action_url": reverse(
                 "djangocms_xliff:import",
@@ -183,7 +209,7 @@ class ImportView(XliffView):
             xliff_context = XliffContext.from_dict(data)
             save_xliff_context(xliff_context)
 
-            obj = get_obj(content_type_id, obj_id)
+            obj = xliff_context.get_obj()
 
             model_admin = admin.site._registry[obj._meta.model]  # type: ignore
             return model_admin.response_change(request, obj)

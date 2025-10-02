@@ -33,3 +33,11 @@ repos:
       - id: mypy
         additional_dependencies:
           - django-stubs
+  - repo: local
+    hooks:
+      - id: django-compilemessages
+        name: django compilemessages
+        entry: bash -c "django-admin compilemessages --ignore .tox --ignore .venv"
+        language: system
+        pass_filenames: false
+        always_run: true

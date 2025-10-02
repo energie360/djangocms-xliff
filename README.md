@@ -1,6 +1,8 @@
 # djangocms-xliff
 
 [![Tests](https://github.com/energie360/djangocms-xliff/actions/workflows/tests.yaml/badge.svg?branch=main)](https://github.com/energie360/djangocms-xliff/actions/workflows/tests.yaml)
+[![PyPI](https://img.shields.io/pypi/v/djangocms-xliff)](https://pypi.org/project/djangocms-xliff)
+
 
 XLIFF (XML Localization Interchange File Format) is an XML-based format created
 to standardize the way localizable data are passed between and among tools during a localization process.
@@ -17,7 +19,7 @@ pip install djangocms-xliff==1.*.*
 
 *We are not planning to support this package for django-cms version 3 or lower*
 
-Please upgrade to a v2 release if you are using django-cms version 4 or higher
+Please upgrade to a v2 release if you are using django-cms version 5 or higher
 
 ## Installation
 
