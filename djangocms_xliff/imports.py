@@ -1,7 +1,6 @@
 import logging
 
 from cms.models import CMSPlugin, PageUrl
-from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
 from django.utils.translation import gettext
 from djangocms_alias.models import AliasContent
@@ -107,29 +106,9 @@ def validate_units_max_lengths(units: list[Unit]):
             raise XliffImportError(error_message % error_params)
 
 
-def validate_tool_id(obj: XliffObj, xliff_context: XliffContext) -> None:
-    content_type_id = ContentType.objects.get_for_model(obj).pk
-    obj_id = obj.pk
-
-    if content_type_id != xliff_context.content_type_id and obj_id != xliff_context.obj_id:
-        error_message = gettext(
-            "Current page with content type id: %(content_type_id)s and obj id: %(obj_id)s is not the same as "
-            "xliff content type id: %(xliff_content_type_id)s and obj id: %(xliff_obj_id)s. "
-            "You can only import to the same page you exported from."
-        )
-        error_params = {
-            "content_type_id": content_type_id,
-            "obj_id": obj_id,
-            "xliff_content_type_id": xliff_context.content_type_id,
-            "xliff_obj_id": xliff_context.obj_id,
-        }
-        raise XliffImportError(error_message % error_params)
-
-
 def validate_xliff(obj: XliffObj, xliff_context: XliffContext, current_language: str) -> None:
     validate_units_max_lengths(xliff_context.units)
     validate_page_with_xliff_context(xliff_context, current_language)
-    validate_tool_id(obj, xliff_context)
 
 
 def compare_units(

@@ -17,7 +17,7 @@ pip install djangocms-xliff==1.*.*
 
 *We are not planning to support this package for django-cms version 3 or lower*
 
-Please upgrade to a v2 release if you are using django-cms version 4 or higher
+Please upgrade to a v2 release if you are using django-cms version 5 or higher
 
 ## Installation
 

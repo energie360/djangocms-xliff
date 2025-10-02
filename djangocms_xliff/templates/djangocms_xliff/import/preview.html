@@ -3,6 +3,10 @@
 {% load i18n l10n %}
 
 {% block content %}
+    {% if old_version_hint %}
+        <p style="color: #de0404 !important; font-weight: bold; margin-bottom: 30px;">{{ old_version_hint }}</p>
+    {% endif %}
+
     <p style="color: #693 !important; font-weight: bold; margin-bottom: 30px;">{{ description }}</p>
 
     <div class="change-list">
