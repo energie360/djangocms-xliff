@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-02 11:37+0200\n"
-"PO-Revision-Date: 2025-10-02 11:53+0200\n"
+"POT-Creation-Date: 2025-10-02 17:19+0200\n"
+"PO-Revision-Date: 2025-10-02 17:21+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de\n"
@@ -51,10 +51,10 @@ msgid ""
 "Found %(count_plugins)d plugins that will be imported to the "
 "\"%(language)s\" page."
 msgstr ""
-"Es wurden %(count_plugins)d gefunden, die auf der Seite \"%(language)s\" "
-"importiert werden."
+"Es wurden %(count_plugins)d plugins gefunden, die auf der Seite "
+"\"%(language)s\" importiert werden."
 
-#: djangocms_xliff/admin.py:154 djangocms_xliff/views.py:181
+#: djangocms_xliff/admin.py:154 djangocms_xliff/views.py:182
 msgid ""
 "Please note that complex types, images, media and links are not part of the "
 "translation process and have to be translated manually."
@@ -119,6 +119,24 @@ msgstr ""
 "Der text in \"%(field_name)s\" mit dem Inhalt \"%(target)s\" hat zu viele "
 "Zeichen. Sollte %(max_length)s sein, ist aber %(target_length)s"
 
+#: djangocms_xliff/imports.py:113
+#, python-format
+msgid ""
+"The XLIFF file was exported from a different type of object. Expected type "
+"\"%(expected_type)s\", got \"%(actual_type)s\"."
+msgstr ""
+"Die XLIFF-Datei wurde aus einem anderen Objekttyp exportiert. Erwarteter Typ "
+"\"%(expected_type)s\", erhalten \"%(actual_type)s\"."
+
+#: djangocms_xliff/imports.py:123
+msgid ""
+"The XLIFF file was exported from a different page. Please make sure to "
+"import the XLIFF file from the same page it was exported from."
+msgstr ""
+"Die XLIFF-Datei wurde von einer anderen Seite exportiert. Achten Sie darauf, "
+"die XLIFF-Datei von derselben Seite zu importieren, von der sie exportiert "
+"wurde."
+
 #: djangocms_xliff/parsers.py:133
 msgid "Invalid xml"
 msgstr "Ungültiges XML"
@@ -169,7 +187,7 @@ msgstr "Absenden"
 
 #: djangocms_xliff/templates/djangocms_xliff/admin/xliff/overview.html:21
 #: djangocms_xliff/templates/djangocms_xliff/import/preview.html:36
-#: djangocms_xliff/views.py:130
+#: djangocms_xliff/views.py:131
 msgid "Import"
 msgstr "Importieren"
 
@@ -223,22 +241,22 @@ msgstr ""
 msgid "Download"
 msgstr "Herunterladen"
 
-#: djangocms_xliff/views.py:131
+#: djangocms_xliff/views.py:132
 #, python-format
 msgid "Import the translation for the \"%(language)s\" page."
 msgstr "Importieren Sie die Übersetzung für die Seite \"%(language)s\"."
 
-#: djangocms_xliff/views.py:132
+#: djangocms_xliff/views.py:133
 msgid "You can only import to the same page and language you exported from."
 msgstr ""
 "Sie können nur in dieselbe Seite und Sprache importieren, aus der Sie "
 "exportiert haben."
 
-#: djangocms_xliff/views.py:134
+#: djangocms_xliff/views.py:135
 msgid "Preview"
 msgstr "Vorschau"
 
-#: djangocms_xliff/views.py:150
+#: djangocms_xliff/views.py:151
 #, python-format
 msgid ""
 "The XLIFF file was exported from an older version of this page. The import "
@@ -247,16 +265,16 @@ msgid ""
 "the old version or create a new xliff export from the current version."
 msgstr ""
 "Die XLIFF-Datei wurde aus einer älteren Version dieser Seite exportiert. Der "
-"Import aktualisiert die alte Version ‘%(old_version)s'. Sie bearbeiten "
+"Import aktualisiert die alte Version ‘%(old_version)s’. Sie bearbeiten "
 "gerade eine neuere Version. Wenn Sie den übersetzten Inhalt benötigen, "
 "stellen Sie sicher, dass Sie zur alten Version zurückkehren oder einen neuen "
 "XLIFF-Export aus der aktuellen Version erstellen."
 
-#: djangocms_xliff/views.py:165
+#: djangocms_xliff/views.py:166
 #, python-format
 msgid ""
 "Found %(count_plugins)d plugins in \"%(file_name)s\" that will be imported "
 "to the \"%(language)s\" page."
 msgstr ""
-"Es wurden %(count_plugins)d in der Datei %(file_name)s gefunden, die auf der "
-"Seite \"%(language)s\" importiert werden."
+"Es wurden %(count_plugins)d plugins in der Datei \"%(file_name)s\" gefunden, "
+"die auf der Seite \"%(language)s\" importiert werden."

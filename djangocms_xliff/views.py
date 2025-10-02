@@ -109,17 +109,18 @@ class UploadView(XliffView):
             uploaded_file_name = uploaded_file.name
             xliff_context = parse_xliff_document(uploaded_file)
 
+            current_obj = get_obj(content_type_id, obj_id)
             xliff_obj = xliff_context.get_obj()
 
-            validate_xliff(xliff_obj, xliff_context, current_language)
+            validate_xliff(current_obj, xliff_obj, xliff_context, current_language)
 
-            current_obj = get_latest_obj_by_version(xliff_obj, current_language)
+            latest_xliff_obj = get_latest_obj_by_version(xliff_obj, current_language)
 
             return self.render_template_success(
                 file_name=uploaded_file_name,
                 xliff_context=xliff_context,
                 xliff_obj=xliff_obj,
-                current_obj=current_obj,
+                current_obj=latest_xliff_obj,
             )
         except XliffError as e:
             return self.error_response(e)
@@ -208,7 +209,7 @@ class ImportView(XliffView):
             xliff_context = XliffContext.from_dict(data)
             save_xliff_context(xliff_context)
 
-            obj = get_obj(content_type_id, obj_id)
+            obj = xliff_context.get_obj()
 
             model_admin = admin.site._registry[obj._meta.model]  # type: ignore
             return model_admin.response_change(request, obj)
