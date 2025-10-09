@@ -107,12 +107,12 @@ def try_get_model_for_alias_content(obj: AliasContent) -> XliffObj | None:
 def get_path(obj: XliffObj, language: str) -> str:
     if type(obj) is AliasContent:
         alias_content_model = try_get_model_for_alias_content(obj)
-        if not alias_content_model:
-            from cms.toolbar.utils import get_object_edit_url
+        if alias_content_model:
+            return alias_content_model.get_absolute_url(language) or ""  # type: ignore
 
-            return get_object_edit_url(obj, language)
+        from cms.toolbar.utils import get_object_edit_url
 
-        return alias_content_model.get_absolute_url(language) or ""  # type: ignore
+        return get_object_edit_url(obj, language)
 
     with translation.override(language):
         return obj.get_absolute_url() or ""  # type: ignore
