@@ -12,7 +12,9 @@ from cms.models import (
     StaticPlaceholder,
 )
 from cms.templatetags.cms_tags import DeclaredPlaceholder
-from cms.utils.placeholder import get_declared_placeholders_for_obj as _get_declared_placeholders_for_obj_original
+from cms.utils.placeholder import (
+    get_declared_placeholders_for_obj as _get_declared_placeholders_for_obj_original,
+)
 from django.db.models import (
     CharField,
     Field,
@@ -39,7 +41,7 @@ from djangocms_xliff.utils import (
     get_plugin_id_for_extension_obj,
     get_plugin_id_for_metadata_obj,
     get_type_with_path,
-    must_get_model_for_alias_content,
+    try_get_model_for_alias_content,
 )
 
 logger = logging.getLogger(__name__)
@@ -189,7 +191,12 @@ def get_metadata_fields(obj: XliffObj) -> tuple[XliffObj, dict]:
         fields = METADATA_FIELDS.copy()
     elif type(obj) is AliasContent:
         fields = METADATA_FIELDS.copy()
-        target_obj = must_get_model_for_alias_content(obj)  # type: ignore
+        alias_content_model = try_get_model_for_alias_content(obj)
+        if alias_content_model:
+            target_obj = alias_content_model
+        else:
+            # If no alias content model is configured, we are on a AliasContent without relation to a model
+            fields = {}
     else:
         fields = {f.name: f.verbose_name for f in obj._meta.fields}
 
