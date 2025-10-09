@@ -94,25 +94,25 @@ def get_latest_obj_by_version[T: CMSContentType](obj: T, language: str) -> T:
         raise XliffError(f"Did not find latest version for {type(obj)}: {obj.pk}") from e
 
 
-def must_get_model_for_alias_content(obj: AliasContent) -> XliffObj:
-    if get_model_for_alias_content is None:
-        raise XliffConfigurationError(
-            "You have xliff content for alias content, but no get_model_for_alias_content() handler is configured"
-        )
+def try_get_model_for_alias_content(obj: AliasContent) -> XliffObj | None:
+    if not get_model_for_alias_content:
+        return None
 
     try:
-        model = get_model_for_alias_content(obj.alias)
-        if model is None:
-            raise XliffError(f"Did not find model for alias content with id: {obj.pk}")
-        return model
+        return get_model_for_alias_content(obj.alias)
     except AttributeError as e:
         raise XliffConfigurationError(f"Model {type(obj)} is used as AliasContent but has no alias relation") from e
 
 
 def get_path(obj: XliffObj, language: str) -> str:
     if type(obj) is AliasContent:
-        model = must_get_model_for_alias_content(obj)
-        return model.get_absolute_url(language) or ""  # type: ignore
+        alias_content_model = try_get_model_for_alias_content(obj)
+        if not alias_content_model:
+            from cms.toolbar.utils import get_object_edit_url
+
+            return get_object_edit_url(obj, language)
+
+        return alias_content_model.get_absolute_url(language) or ""  # type: ignore
 
     with translation.override(language):
         return obj.get_absolute_url() or ""  # type: ignore

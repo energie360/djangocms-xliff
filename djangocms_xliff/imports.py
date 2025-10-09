@@ -17,7 +17,7 @@ from djangocms_xliff.utils import (
     get_lang_name,
     get_obj,
     map_units_by_plugin_id,
-    must_get_model_for_alias_content,
+    try_get_model_for_alias_content,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,9 @@ def save_xliff_units_for_metadata(units: list[Unit], target_language: str) -> No
                 obj.page.update_urls(language=target_language, path=path)
 
             elif type(obj) is AliasContent:
-                obj = must_get_model_for_alias_content(obj)
+                alias_content_model = try_get_model_for_alias_content(obj)
+                if alias_content_model:
+                    obj = alias_content_model
 
             if obj is None:
                 raise XliffImportError(gettext("Did not find metadata for obj: %(obj_type)s") % {"obj_type": type(obj)})
