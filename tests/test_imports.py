@@ -13,7 +13,7 @@ from djangocms_xliff.imports import (
 )
 from djangocms_xliff.settings import UNIT_ID_METADATA_ID
 from djangocms_xliff.types import Unit
-from djangocms_xliff.utils import get_plugin_id_for_metadata_obj
+from djangocms_xliff.utils import get_plugin_id_for_metadata_obj, get_plugin_id_for_obj, get_unit_id_format
 
 
 def get_character_length_test_units() -> list[Unit]:
@@ -129,44 +129,47 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
     menu_title_target_text = "Menütitel übersetzt"
     meta_description_target_text = "Meta Beschreibung übersetzt"
 
-    title_obj = page_with_metadata.get_content_obj(language="en")
+    page_content = page_with_metadata.get_content_obj(language="en")
     page_url = page_with_metadata.get_url_obj(language="en")
 
     page_unit = partial(
         Unit,
-        plugin_id=get_plugin_id_for_metadata_obj(title_obj),
+        plugin_id=get_unit_id_format(UNIT_ID_METADATA_ID, page_content.pk),
         plugin_type=UNIT_ID_METADATA_ID,
         plugin_name=UNIT_ID_METADATA_ID,
         field_type="django.db.models.fields.CharField",
     )
 
+    page_content_field_format = partial(get_unit_id_format, get_plugin_id_for_obj(page_content))
+    page_url_field_format = partial(get_unit_id_format, get_plugin_id_for_obj(page_url))
+
     units = [
         page_unit(
-            field_name="title",
-            source=title_obj.title,
+            field_name=page_content_field_format("title"),
+            source=page_content.title,
             target=title_target_text,
             field_verbose_name="Title",
             max_length=255,
         ),
         page_unit(
             plugin_id=get_plugin_id_for_metadata_obj(page_url),
-            field_name="slug",
-            source=title_obj.page_title,
+            field_name=page_url_field_format("slug"),
+            source=page_content.page_title,
             target=slug_target_text,
             field_verbose_name="Slug",
             max_length=255,
         ),
         page_unit(
-            field_name="menu_title",
-            source=title_obj.menu_title,
+            field_name=page_content_field_format("menu_title"),
+            source=page_content.menu_title,
             target=menu_title_target_text,
             field_verbose_name="Menu Title",
             max_length=255,
         ),
         page_unit(
-            field_name="meta_description",
+            field_name=page_content_field_format("meta_description"),
             field_type="django.db.models.fields.TextField",
-            source=title_obj.meta_description,
+            source=page_content.meta_description,
             target=meta_description_target_text,
             field_verbose_name="Description meta tag",
             max_length=None,
@@ -184,7 +187,7 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
     # Import the units
     save_xliff_context(xliff_context)
 
-    updated_page_content = PageContent.objects.get(pk=xliff_context.obj_id)
+    updated_page_content = PageContent.objects.get(pk=page_content.pk)
 
     assert updated_page_content.title == title_target_text
     assert updated_page_content.menu_title == menu_title_target_text

@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 def save_xliff_units_for_metadata(units: list[Unit], target_language: str) -> None:
     with translation.override(target_language):
         for unit in units:
-            _, content_type_id, instance_id = unit.plugin_id.split(UNIT_ID_DELIMITER)
+            content_type_id, instance_id, field_name = unit.field_name.split(UNIT_ID_DELIMITER)
             obj = get_obj(int(content_type_id), instance_id)
 
-            if type(obj) is PageUrl and unit.field_name == "slug":
+            if type(obj) is PageUrl and field_name == "slug":
                 # Slug is not on the PageContent so we need to handle it differently
                 path = obj.page.get_path_for_slug(unit.target, target_language)
                 obj.page.update_urls(language=target_language, path=path)
@@ -43,7 +43,7 @@ def save_xliff_units_for_metadata(units: list[Unit], target_language: str) -> No
                 raise XliffImportError(gettext("Did not find metadata for obj: %(obj_type)s") % {"obj_type": type(obj)})
 
             target = unit.target
-            setattr(obj, unit.field_name, target)
+            setattr(obj, field_name, target)
             obj.save()  # type: ignore
 
 
@@ -70,9 +70,7 @@ def save_xliff_units_for_cms_plugin(units: list[Unit], plugin_id: str) -> None:
 
 def save_xliff_context(xliff_context: XliffContext) -> None:
     for plugin_id, units in xliff_context.grouped_units:
-        if plugin_id.startswith(UNIT_ID_METADATA_ID):
-            save_xliff_units_for_metadata(units, xliff_context.target_language)
-        elif plugin_id.startswith(UNIT_ID_EXTENSION_DATA_ID):
+        if plugin_id.startswith(UNIT_ID_METADATA_ID) or plugin_id.startswith(UNIT_ID_EXTENSION_DATA_ID):
             save_xliff_units_for_metadata(units, xliff_context.target_language)
         else:
             save_xliff_units_for_cms_plugin(units, plugin_id)

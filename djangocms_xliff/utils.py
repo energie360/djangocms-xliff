@@ -145,15 +145,18 @@ def get_metadata_fields_for_model(obj: XliffObj) -> dict[str, str]:
         raise XliffError(f"Can't find model {obj_type} in MODEL_METADATA_FIELDS config") from e
 
 
-def get_plugin_id_for_extension_obj(obj) -> str:
-    content_type_id = ContentType.objects.get_for_model(obj).pk
-    return get_unit_id_format(UNIT_ID_EXTENSION_DATA_ID, str(content_type_id), str(obj.pk))
-
-
-def get_plugin_id_for_metadata_obj(obj) -> str:
-    content_type_id = ContentType.objects.get_for_model(obj).pk
-    return get_unit_id_format(UNIT_ID_METADATA_ID, str(content_type_id), str(obj.pk))
-
-
 def get_unit_id_format(*fields: Any) -> str:
     return UNIT_ID_DELIMITER.join(map(str, fields))
+
+
+def get_plugin_id_for_obj(obj: XliffObj) -> str:
+    content_type_id = ContentType.objects.get_for_model(obj).pk
+    return get_unit_id_format(content_type_id, str(obj.pk))
+
+
+def get_plugin_id_for_extension_obj(obj: XliffObj) -> str:
+    return get_unit_id_format(UNIT_ID_EXTENSION_DATA_ID, get_plugin_id_for_obj(obj))
+
+
+def get_plugin_id_for_metadata_obj(obj: Any) -> str:
+    return get_unit_id_format(UNIT_ID_METADATA_ID, get_plugin_id_for_obj(obj))
