@@ -75,7 +75,7 @@ class Version12(VersionParser):
         units = []
         for trans_unit in self.body_element.findall("trans-unit", namespaces=self.xml_namespaces):
             unit_id = trans_unit.attrib["id"]
-            plugin_id, field_name = unit_id.rsplit(UNIT_ID_DELIMITER, 1)
+            plugin_id, field_name = unit_id.split(UNIT_ID_DELIMITER, 1)
 
             field_type = trans_unit.attrib["extype"]
 
