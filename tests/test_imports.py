@@ -134,7 +134,7 @@ def test_save_page_with_metadata(page_with_metadata, create_xliff_page_context):
 
     page_unit = partial(
         Unit,
-        plugin_id=get_unit_id_format(UNIT_ID_METADATA_ID, page_content.pk),
+        plugin_id=UNIT_ID_METADATA_ID,
         plugin_type=UNIT_ID_METADATA_ID,
         plugin_name=UNIT_ID_METADATA_ID,
         field_type="django.db.models.fields.CharField",
